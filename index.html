@@ -116,6 +116,8 @@
 }
 /* --------------------------------------- */
 
+/* 【弹窗层级保险】本地图库选择弹窗必须永远在最上层（不受任何父容器层级上下文限制） */
+    #cardImgPickerDialog { z-index: 2147483000 !important; }
 /* --- 【新增】时间记录模块：电子屏字体与专属样式 --- */
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
@@ -848,11 +850,43 @@
                 <button class="flex-1 bg-[#60A5FA] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.importCardExcel()">导入EXCEL</button>
                 <button class="flex-1 bg-[#4ADE80] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.exportCardExcel()">导出EXCEL</button>
             </div>
+            <button id="cardMarqueeBtn" class="w-[85%] bg-[#9B79FF] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.toggleCardMarquee()"><i class="fa-solid fa-object-group mr-1"></i>框选模式：关</button>
+            <div id="cardMarqueeHint" class="hidden text-[10px] sm:text-xs text-[#5E4B8B] font-bold text-center leading-tight px-2">框选模式已开启：在卡牌网格里按住拖动即可批量框选（按住 Shift 拖动＝追加选择）。此模式下拖拽排序暂停。</div>
             <button class="w-[60%] bg-[#E11D48] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full py-2 font-black text-white text-lg shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke tracking-widest mt-2" onclick="window.clearAllCards()">清空数据</button>
             <input type="file" id="cardExcelInput" class="absolute w-px h-px opacity-0" style="left:-9999px;" accept=".xlsx, .xls">
         </div>
+
+        <!-- 容器5：编辑模式下多选/框选批量操作栏 -->
+        <div id="cardMultiBar" class="hidden flex-col items-center w-full gap-2 mt-4">
+            <div class="w-full flex items-center justify-between gap-2 bg-white border-[3px] border-[#5E4B8B] rounded-xl px-2 py-1.5 shadow-[0_3px_0_#5E4B8B]">
+                <span class="text-[11px] sm:text-xs font-black text-[#5E4B8B] shrink-0">已选 <span id="cardSelCount" class="text-[#E11D48]">0</span> 张</span>
+                <div class="flex gap-1.5 flex-wrap justify-end">
+                    <button class="bg-[#6D82EE] border-[2px] border-[#5E4B8B] rounded-lg px-2 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5" onclick="window.cardSelectAll()">全选</button>
+                    <button class="bg-[#9B79FF] border-[2px] border-[#5E4B8B] rounded-lg px-2 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5" onclick="window.cardInvertSelect()">反选</button>
+                    <button class="bg-gray-400 border-[2px] border-[#5E4B8B] rounded-lg px-2 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5" onclick="window.cardClearSelect()">取消</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 w-full">
+                <button class="bg-[#F87171] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.delSelectedCards()">删除选中</button>
+                <button class="bg-[#6D82EE] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.openCardMoveDialog()">移至分类</button>
+                <button class="bg-[#4ADE80] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.copySelectedCards()">复制选中</button>
+                <button class="bg-[#F59E0B] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.renumberSelectedCards()">编号重排</button>
+                <button class="bg-[#60A5FA] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.moveSelectedCardsEdge('first')">移到最前</button>
+                <button class="bg-[#60A5FA] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke" onclick="window.moveSelectedCardsEdge('last')">移到最后</button>
+                <button class="bg-[#94A3B8] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-sm sm:text-base shadow-[0_4px_0_#5E4B8B] active:translate-y-1 transition-all text-stroke col-span-2" onclick="window.clearSelectedCardsImage()">清除选中卡牌的图片</button>
+            </div>
+        </div>
     </div>
 </section>
+
+<!-- 卡牌：移动到分类 弹窗 -->
+<div id="cardMoveCatDialog" class="fixed inset-0 bg-[#5E4B8B]/70 backdrop-blur-sm flex items-center justify-center z-[99999] hidden">
+    <div class="bg-[#FEFCE8] border-[4px] border-[#5E4B8B] rounded-[1.5rem] p-4 w-[300px] flex flex-col items-center shadow-[0_8px_0_rgba(94,75,139,0.5)]">
+        <div class="bg-[#6D82EE] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 w-[80%] text-center font-black text-white mb-4 shadow-[0_3px_0_#5E4B8B] text-stroke tracking-widest">移动到分类</div>
+        <div id="cardMoveCatList" class="w-full grid grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto custom-scroll mb-3"></div>
+        <button class="w-full bg-[#F87171] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 font-black text-white text-stroke shadow-[0_3px_0_#5E4B8B] active:translate-y-1 transition-all" onclick="document.getElementById('cardMoveCatDialog').classList.add('hidden')">取消</button>
+    </div>
+</div>
 
 <!-- 【图2复刻】卡牌详细信息弹窗 -->
 <div id="cardDetailModal" class="fixed inset-0 bg-[#5E4B8B]/70 backdrop-blur-sm flex items-center justify-center z-[99999] hidden" onclick="if(event.target===this) this.classList.add('hidden')">
@@ -906,8 +940,15 @@
                 <input type="text" id="cimNameInput" placeholder="输入名称(可留空占位)" class="w-full h-9 border-[3px] border-[#5E4B8B] rounded-xl px-2 font-bold text-[#5E4B8B] text-sm focus:outline-none">
             </div>
             <div>
-                <div class="text-xs font-bold text-[#5E4B8B] mb-0.5 ml-1 tracking-widest">图片 URL</div>
-                <input type="text" id="cimUrlInput" placeholder="http://..." class="w-full h-9 border-[3px] border-[#5E4B8B] rounded-xl px-2 font-bold text-[#5E4B8B] text-sm focus:outline-none">
+                <div class="text-xs font-bold text-[#5E4B8B] mb-0.5 ml-1 tracking-widest">卡牌图片</div>
+                <div class="flex items-center gap-2">
+                    <img id="cimUrlPreview" src="" alt="" class="w-14 h-[42px] object-contain border-[2px] border-[#5E4B8B] bg-[#111] rounded shrink-0" style="visibility:hidden;" onerror="this.style.visibility='hidden'">
+                    <input type="text" id="cimUrlInput" placeholder="图片URL 或 已选本地图(留空=无图)" class="flex-1 h-9 border-[3px] border-[#5E4B8B] rounded-xl px-2 font-bold text-[#5E4B8B] text-sm focus:outline-none">
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <button type="button" class="flex-1 bg-[#6D82EE] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 font-black text-white text-xs shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 transition-all" onclick="window.openCardImgPicker(function(u){ window.setCimUrl(u); })"><i class="fa-solid fa-images mr-1"></i>从图片库选择</button>
+                    <button type="button" class="flex-1 bg-[#4ADE80] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 font-black text-white text-xs shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 transition-all" onclick="window.pickCardLocalImage()"><i class="fa-solid fa-upload mr-1"></i>本地上传</button>
+                </div>
             </div>
             <div>
                 <div class="text-xs font-bold text-[#5E4B8B] mb-0.5 ml-1 tracking-widest">卡牌信息 (换行自动变圆点列表)</div>
@@ -920,6 +961,32 @@
         </div>
     </div>
 </div>
+<!-- 卡牌图片选择器弹窗（供「卡牌编辑」与「方式管理 → 本地图库」共用）
+     【层级修复】z 提到 100100，绝对不会再被「方式管理」弹窗(99999)盖住 -->
+<div id="cardImgPickerDialog" class="fixed inset-0 bg-[#5E4B8B]/70 backdrop-blur-sm flex items-center justify-center z-[100100] hidden">
+    <div class="bg-[#FEFCE8] border-[4px] border-[#5E4B8B] rounded-[1.5rem] p-4 w-[min(96vw,900px)] max-w-[96vw] max-h-[86vh] flex flex-col items-center shadow-[0_8px_0_rgba(94,75,139,0.5)]">
+        <div class="bg-[#6D82EE] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 w-[80%] text-center font-black text-white mb-3 shadow-[0_3px_0_#5E4B8B] text-stroke tracking-widest">选择图片</div>
+        <div class="flex justify-center gap-2 w-full mb-2">
+            <button id="cipUploadBtn" class="flex-1 max-w-[220px] bg-[#4ADE80] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 font-black text-white text-xs shadow-[0_3px_0_#5E4B8B] active:translate-y-1 transition-all"><i class="fa-solid fa-upload mr-1"></i>本地上传</button>
+            <button id="cipCloseBtn" class="flex-1 max-w-[220px] bg-[#F87171] border-[3px] border-[#5E4B8B] rounded-xl py-1.5 font-black text-white text-xs shadow-[0_3px_0_#5E4B8B] active:translate-y-1 transition-all">取消</button>
+        </div>
+        <!-- 【新增】按「卡牌信息」分类筛选 + 一行显示张数 -->
+        <div class="flex flex-wrap items-center justify-center gap-2 w-full mb-2">
+            <div class="flex items-center gap-1">
+                <span class="text-[11px] font-black text-[#5E4B8B] whitespace-nowrap">分类</span>
+                <select id="cipCatSelect" class="border-[2.5px] border-[#5E4B8B] rounded-lg px-2 py-1 text-[12px] font-black text-[#5E4B8B] bg-white focus:outline-none max-w-[160px]"></select>
+            </div>
+            <div class="flex items-center gap-1">
+                <span class="text-[11px] font-black text-[#5E4B8B] whitespace-nowrap">一行</span>
+                <input id="cipColsInput" type="number" min="1" max="12" step="1" value="6" class="w-[58px] border-[2.5px] border-[#5E4B8B] rounded-lg px-1 py-1 text-[12px] font-black text-[#5E4B8B] bg-white text-center focus:outline-none">
+                <span class="text-[11px] font-black text-[#5E4B8B]">张</span>
+            </div>
+        </div>
+        <div id="cipGrid" class="w-full grid grid-cols-3 gap-2 overflow-y-auto custom-scroll flex-1" style="min-height:160px;"></div>
+        <p class="text-[10px] text-[#5E4B8B] mt-2 text-center leading-tight">点击任意图片即可选用；本地上传会先存入后台管理图片库。图片可在「后台管理 → 图片库」里按卡牌信息的分类归类，用上方下拉框筛选。</p>
+    </div>
+</div>
+
 <!-- ==================================================================== -->
 
 <!-- ======================================================== -->
@@ -973,13 +1040,9 @@
 <!-- 【全新重建】1V1-擂台区 (图1/2/3 像素复刻版) -->
         <!-- 【全新重构】1V1-擂台区 (玩家独立卡片版 · 像素级复刻设计稿) -->
         <section id="oneVsOneSection" class="kawaii-card p-2 sm:p-4 mb-6 relative" style="order: 0;">
-            <!-- 【顶部栏】1V1擂台标题胶囊 (带描边，整体居中；设置按钮已移至全局顶栏) -->
-            <div id="ovoTitleWrap" class="flex items-center justify-center mb-3">
-                <div class="bg-white/90 border-[3px] border-[#5E4B8B] rounded-full px-5 sm:px-7 py-1 sm:py-1.5 shadow-[0_3px_0_#5E4B8B]">
-                    <span class="font-black text-[#5E4B8B] text-base sm:text-xl tracking-widest flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-khanda text-[#6ca5eb]"></i>1V1擂台区
-                    </span>
-                </div>
+            <!-- 【顶部栏】1V1擂台 LOGO 位（文字标题已移除，改为上传图片 LOGO，在右上角 ⚙ 设置里上传） -->
+            <div id="ovoTitleWrap" class="flex items-center justify-center mb-3 hidden">
+                <div id="ovoLogoSlot" class="w-full flex items-center justify-center"></div>
             </div>
 
             <div id="ovoHeaderContainer" class="w-full"></div>
@@ -1752,16 +1815,13 @@
 
 
 <!-- 【优化】场次记录模块 -->
-        <section id="sessionSection" class="kawaii-card p-4 sm:p-6 mb-6" style="order: 0">
+        <section id="sessionSection" class="kawaii-card p-4 sm:p-6 mb-6 relative" style="order: 0">
             <div id="sessionListView">
                 <!-- 头部标题胶囊 (带描边，整体居中) 与添加按钮 -->
-                <div id="ssTitleWrap" class="relative flex items-center justify-center mb-5 px-1">
-                    <div class="bg-white/90 border-[3px] border-[#5E4B8B] rounded-full px-5 sm:px-7 py-1 sm:py-1.5 shadow-[0_3px_0_#5E4B8B]">
-                        <span class="font-black text-[#5E4B8B] text-lg sm:text-2xl tracking-widest flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-calendar-days text-[#93C5FD]"></i>场次记录
-                        </span>
-                    </div>
-                    <button id="addSessionBtn" class="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#4ADE80] border-[3px] sm:border-4 border-[#5E4B8B] text-white shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none flex items-center justify-center transition-all hover:brightness-110">
+                <div id="ssTitleWrap" class="relative flex items-center justify-center mb-5 px-1 min-h-[44px]">
+                    <!-- 【LOGO 位】文字标题已移除，改为上传图片 LOGO（在右上角 ⚙ 设置里上传） -->
+                    <div id="ssLogoSlot" class="w-full flex items-center justify-center"></div>
+                    <button id="addSessionBtn" style="pointer-events:auto;" class="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#4ADE80] border-[3px] sm:border-4 border-[#5E4B8B] text-white shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none flex items-center justify-center transition-all hover:brightness-110">
                         <i class="fa-solid fa-plus text-xl sm:text-2xl font-black"></i>
                     </button>
                 </div>
@@ -1926,6 +1986,47 @@
             </div>
         </section>
 
+<!-- ======================================================== -->
+<!-- 【新增模块】图片库 (位于后台管理区域，与数据管理并列) -->
+<!-- 【小白调节区】：整体卡片样式用 kawaii-card；按钮沿用 kawaii-btn -->
+<!-- ======================================================== -->
+<section id="imageLibrarySection" class="kawaii-card p-3 sm:p-4 mb-6" style="display: none;">
+    <div class="flex justify-between items-center gap-2 flex-wrap">
+        <h2 class="text-sm sm:text-base font-bold text-[#5E4B8B] flex items-center">
+            <button id="imgLibToggleBtn" type="button" class="mr-2 w-7 h-7 rounded-full bg-[#6D82EE] border-[2.5px] border-[#5E4B8B] text-white flex items-center justify-center shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all" title="展开 / 收起图片库"><i id="imgLibToggleIcon" class="fa-solid fa-chevron-down text-[11px]"></i></button>
+            <i class="fa-solid fa-images text-[#6D82EE] mr-2 text-lg"></i>图片库
+            <span id="imgLibCountInline" class="ml-2 text-[10px] font-normal text-gray-400"></span>
+        </h2>
+    </div>
+    <!-- 【默认折叠】展开后才显示下面的全部内容 -->
+    <div id="imgLibBody" class="hidden">
+    <div class="flex justify-between items-center mb-3 mt-2 gap-2 flex-wrap">
+        <span id="imgLibCount" class="text-[10px] font-normal text-gray-400"></span>
+        <div class="flex gap-2 flex-wrap">
+            <button id="imgLibBatchBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#6D82EE] text-white shadow-sm"><i class="fa-solid fa-list-check mr-1"></i>批量管理</button>
+            <button id="imgLibUploadBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#6D82EE] text-white shadow-sm"><i class="fa-solid fa-upload mr-1"></i>上传图片</button>
+            <button id="imgLibExportBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#4ADE80] text-white shadow-sm"><i class="fa-solid fa-file-export mr-1"></i>导出JSON</button>
+            <button id="imgLibImportBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#F59E0B] text-white shadow-sm"><i class="fa-solid fa-file-import mr-1"></i>导入JSON</button>
+        </div>
+    </div>
+    <!-- 搜索框 + 已选计数 -->
+    <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <input id="imgLibSearchInput" type="text" placeholder="按名称搜索图片…" class="flex-1 min-w-[130px] border-2 border-[#5E4B8B] rounded-lg px-2 py-1 text-[12px] text-[#5E4B8B] focus:outline-none bg-white">
+        <span id="imgLibSelCount" class="hidden text-[11px] font-black text-[#5E4B8B] whitespace-nowrap">已选 0</span>
+    </div>
+    <!-- 批量操作栏（仅在批量管理模式下出现） -->
+    <div id="imgLibBatchBar" class="hidden flex-wrap gap-2 mb-2">
+        <button class="kawaii-btn !py-1 !px-2.5 text-[11px] sm:text-xs bg-[#6D82EE] text-white" onclick="window.libSelectAll()"><i class="fa-solid fa-check-double mr-1"></i>全选</button>
+        <button class="kawaii-btn !py-1 !px-2.5 text-[11px] sm:text-xs bg-[#9B79FF] text-white" onclick="window.libInvertSelect()"><i class="fa-solid fa-shuffle mr-1"></i>反选</button>
+        <button class="kawaii-btn !py-1 !px-2.5 text-[11px] sm:text-xs bg-danger text-white" onclick="window.delSelectedLibImages()"><i class="fa-solid fa-trash-can mr-1"></i>删除选中</button>
+        <button class="kawaii-btn !py-1 !px-2.5 text-[11px] sm:text-xs bg-gray-400 text-white" onclick="window.libClearSelect()"><i class="fa-solid fa-xmark mr-1"></i>取消选择</button>
+    </div>
+    <!-- 图片网格：JS 动态渲染 -->
+    <div id="imgLibGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+    <p class="text-[10px] text-gray-400 mt-2 leading-tight">提示：上传的图片会自动压缩并存入本地（localStorage ＋ 大容量备用仓库双保险，刷新/关机都不会丢），PNG 自动保留透明通道；同时会随「数据管理 → 导出Excel」工程文件完整备份。导入JSON会覆盖整个图片库。每张图可用下方下拉框归到「卡牌信息」的分类。</p>
+    </div>
+</section>
+
 <!-- 
   ========================================================
   【图1像素级复刻：结算详情1 大模块】 
@@ -2029,11 +2130,26 @@
             <button id="mmAddItemBtn" class="bg-[#6D82EE] border-[2px] border-[#333333] px-4 py-1.5 shadow-[2px_2px_0_#333333] active:translate-y-[2px] active:shadow-none transition-all">
                 <span class="font-black text-white text-[16px] tracking-widest">添加方式</span>
             </button>
+            <button id="mmMultiBtn" class="bg-[#9B79FF] border-[2px] border-[#333333] px-4 py-1.5 shadow-[2px_2px_0_#333333] active:translate-y-[2px] active:shadow-none transition-all" onclick="window.toggleMmMultiMode()">
+                <span class="font-black text-white text-[16px] tracking-widest">多选</span>
+            </button>
         </div>
 
         <!-- 动态生成的分类与条目渲染区 (JS会在这里疯狂作画) -->
         <div id="methodManagerContent" class="flex flex-col w-full gap-4 pb-6">
             <!-- JS 动态注入 -->
+        </div>
+
+        <!-- 【多选】批量操作栏（勾选结算方式后自动出现） -->
+        <div id="mmMultiBar" class="hidden flex-col items-center w-full mt-2">
+            <div class="w-full bg-[#FFF6E9] border-[2px] border-[#333333] p-2 flex gap-2">
+                <button class="flex-1 bg-[#D84C53] border-[2px] border-[#333333] py-1.5 shadow-[2px_2px_0_#333333] active:translate-y-[2px] active:shadow-none transition-all" onclick="window.delSelectedMmItems()">
+                    <span class="font-black text-white text-[15px] tracking-widest drop-shadow-sm">删除选中(<span id="mmSelCount">0</span>)</span>
+                </button>
+                <button class="flex-1 bg-[#6D82EE] border-[2px] border-[#333333] py-1.5 shadow-[2px_2px_0_#333333] active:translate-y-[2px] active:shadow-none transition-all" onclick="window.openMmMoveDialog()">
+                    <span class="font-black text-white text-[15px] tracking-widest drop-shadow-sm">移动到分类</span>
+                </button>
+            </div>
         </div>
 
         <!-- 底部导出导入与清空区 -->
@@ -2227,6 +2343,16 @@
             <!-- 隐藏的真实URL暂存，保持原 item.url 字段不变 -->
             <input type="hidden" id="mmItemUrlInput" value="">
         </div>
+        <!-- 【本地图片库】入口（与上方旧图片库互不干扰） -->
+        <div class="flex items-center gap-3">
+            <div class="bg-[#9B79FF] border-[1.5px] border-[#333333] px-2 py-1 w-[100px] shrink-0 flex items-center justify-center">
+                <span class="font-black text-white text-[15px] tracking-widest">本地库</span>
+            </div>
+            <button id="mmSelectFromLocalLibBtn" type="button" class="flex-1 h-[38px] border-[1.5px] border-[#333333] bg-white font-black text-[15px] text-[#333333] active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fa-solid fa-images text-[#9B79FF]"></i>
+                <span>从本地图片库选择</span>
+            </button>
+        </div>
         <!-- 当前已选图片预览 -->
         <div id="mmItemUrlPreview" class="w-full flex justify-center mb-1"></div>
 
@@ -2246,6 +2372,17 @@
                 <span class="font-black text-white text-[20px] tracking-widest drop-shadow-sm">取消</span>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- 【多选】结算方式移动到分类弹窗（支持跨 淘汰/胜利 两栏） -->
+<div id="mmMoveCatDialog" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[99999] hidden">
+    <div class="bg-white border-[2px] border-[#333333] p-4 w-[300px] max-w-[90vw] flex flex-col gap-3 relative shadow-xl">
+        <div class="bg-[#EC71A1] border-[1.5px] border-[#333333] py-1.5 flex items-center justify-center">
+            <span class="font-black text-white text-[18px] tracking-widest">移动到分类</span>
+        </div>
+        <div id="mmMoveCatList" class="flex flex-col gap-1.5 overflow-y-auto custom-scroll" style="max-height:52vh;"></div>
+        <button class="w-full bg-[#D84C53] border-[1.5px] border-[#333333] py-1.5 font-black text-white text-[16px] tracking-widest shadow-[1.5px_1.5px_0_#333333] active:translate-y-[2px] active:shadow-none transition-all" onclick="document.getElementById('mmMoveCatDialog').classList.add('hidden')">取消</button>
     </div>
 </div>
 
@@ -2990,6 +3127,7 @@
 
         let gameData = { 
             players:[], rounds:[], achievements: {}, 
+            localImageLibrary: { items: [] }, // 【新增】后台管理独立图片库，与“方法管理”的图片库完全分离
             bgIndex: 0, cardBg: '#ffffff', 
             fonts: { num: "'Fredoka'", en: "'Fredoka'", zh: "'Microsoft YaHei', sans-serif" },
             sessions:[],
@@ -3058,7 +3196,8 @@ const modulesConfig =[
             { id: 'sessionSection', name: '场次记录', icon: 'fa-calendar-days' },
             { id: 'barSection', name: 'ROUND动态条', icon: 'fa-chart-bar' },
             { id: 'tableSection', name: '局次得分详情', icon: 'fa-table' },
-            { id: 'dataIOSection', name: '后台管理', icon: 'fa-file-excel' }
+            { id: 'dataIOSection', name: '后台管理', icon: 'fa-file-excel' },
+            { id: 'imageLibrarySection', name: '图片库', icon: 'fa-images' } /* 【新增】后台管理独立图片库，仅“后台管理”tab 显示 */
         ];
         
         const defaultSectionOrder = modulesConfig.map(m => m.id);
@@ -3355,6 +3494,29 @@ let chartInstance = null;
             }
         }
 
+// 【自适应】让「游玩总时长」永远不超出 LCD 显示视窗
+        window.__fitTrTotalText = function () {
+            const screenEl = document.getElementById('trTotalLcdScreen');
+            const txtEl = document.getElementById('trTotalTimeText');
+            if (!screenEl || !txtEl) return;
+            const base = (window.innerWidth < 640) ? 24 : 40;
+            let size = base;
+            txtEl.style.fontSize = size + 'px';
+            const avail = screenEl.clientWidth - 12;
+            if (avail <= 0) return;
+            let guard = 0;
+            while (txtEl.scrollWidth > avail && size > 11 && guard++ < 80) {
+                size -= 1;
+                txtEl.style.fontSize = size + 'px';
+            }
+        };
+        try {
+            window.addEventListener('resize', function () {
+                clearTimeout(window.__trFitTimer);
+                window.__trFitTimer = setTimeout(function () { try { window.__fitTrTotalText(); } catch (e) {} }, 150);
+            });
+        } catch (eR) {}
+
 // 渲染图1的历史记录列表（严格复刻容器5）
         window.renderTrHistoryList = function() {
             const listContainer = document.getElementById('trHistoryList');
@@ -3394,12 +3556,14 @@ let chartInstance = null;
                         <div class="bg-[#fb2a53] border-[2px] sm:border-[2.5px] border-[#5E4B8B] rounded-[0.5rem] px-3 sm:px-4 h-[30px] sm:h-[34px] shadow-[0_2px_0_#5E4B8B] flex items-center justify-center ml-1 shrink-0">
                             <span class="font-black text-white text-[13px] sm:text-[15px] font-bold leading-none translate-y-[1px] drop-shadow-sm tracking-widest " style="-webkit-text-stroke: 0px #5E4B8B;">游玩总时长</span>
                         </div>
-                        <!-- 右侧：超宽版 LCD 时间屏幕 -->
-                        <div class="bg-[#bfc7b8] rounded-[0.5rem] px-4 sm:px-8 h-[50px] sm:h-[32px] lcd-screen-shadow flex items-center justify-center border-[1px] border-[#727a6b]/30 mr-1 shrink-0 flex-1 ml-2 sm:ml-4">
-                            <span class="font-leslie text-[#5c4c8b] text-[40px] sm:text-[24px] font-bold tracking-widest leading-none drop-shadow-sm">${formatTrTime(totalElapsedSum)}</span>
+                        <!-- 右侧：超宽版 LCD 时间屏幕（字号自适应，绝不超出显示视窗） -->
+                        <div id="trTotalLcdScreen" class="bg-[#bfc7b8] rounded-[0.5rem] px-4 sm:px-8 h-[50px] sm:h-[32px] lcd-screen-shadow flex items-center justify-center border-[1px] border-[#727a6b]/30 mr-1 shrink-0 flex-1 ml-2 sm:ml-4 overflow-hidden">
+                            <span id="trTotalTimeText" class="font-leslie text-[#5c4c8b] text-[40px] sm:text-[24px] font-bold tracking-widest leading-none drop-shadow-sm whitespace-nowrap max-w-full">${formatTrTime(totalElapsedSum)}</span>
                         </div>
                     </div>
                     `;
+                    // 【自适应】按显示视窗宽度回缩字号，保证总时长永远不超出 LCD 屏幕
+                    setTimeout(function () { try { window.__fitTrTotalText(); } catch (eF) {} }, 0);
                 }
             }
             // ----------------------------------
@@ -3875,8 +4039,15 @@ async function uploadDataToCloud() {
             if(quickHostBtn) quickHostBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-white text-xs sm:text-base"></i>';
             if(hostUpBtn) hostUpBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2 text-white"></i>更新中...';
             
-            // 获取当前本地存储的所有数据
-            const currentData = localStorage.getItem('unoInfinityPro');
+            // 获取当前本地存储的所有数据（图片库现单独存键，上传云端前要合回去，保证云备份完整）
+            let currentData = localStorage.getItem('unoInfinityPro');
+            try {
+                const _cloudObj = JSON.parse(currentData || '{}');
+                if (gameData.localImageLibrary && !_cloudObj.localImageLibrary) {
+                    _cloudObj.localImageLibrary = gameData.localImageLibrary;
+                    currentData = JSON.stringify(_cloudObj);
+                }
+            } catch (eCloudMerge) {}
             const currentTheme = {
                 bg: document.body.style.backgroundImage || '',
                 cardColor: localStorage.getItem('customCardColor') || '',
@@ -4264,6 +4435,15 @@ const saved = localStorage.getItem('unoInfinityPro');
                     const parsed = JSON.parse(saved);
                     if (parsed && Array.isArray(parsed.players) && parsed.players.length > 0) {
                         gameData = parsed;
+
+                        // 【图片库持久化】主数据里没有 localImageLibrary 时，从独立键恢复
+                        if (!gameData.localImageLibrary) {
+                            try {
+                                const _libSaved = localStorage.getItem('unoLocalImageLibrary');
+                                const _libParsed = _libSaved ? JSON.parse(_libSaved) : null;
+                                if (_libParsed && Array.isArray(_libParsed.items)) gameData.localImageLibrary = _libParsed;
+                            } catch (eLib) {}
+                        }
                         
                         // 【恢复局中状态】加载未结束的进行中局次与计时器进度
                         const savedV2 = localStorage.getItem('unoV2State');
@@ -6571,8 +6751,176 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
 
 // ==========================================
 // ==========================================
+
+// ============================================================
+// 【共用】模块标题 LOGO（替换 1V1 / 场次记录 文字标题）
+// · 支持 PNG 异形透明通道（上传时自动保留 alpha）
+// · 参数随各自设置一起写进 localStorage，并随「导出Excel」工程文件完整备份/还原
+// ============================================================
+window.__logoOutlineFilter = function (w) {
+    const n = Math.round(Number(w) || 0);
+    return n > 0 ? 'filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff);' : '';
+};
+window.__logoPanelHtml = function (ns, S, label) {
+    S = S || {};
+    const showOn = !!S.logoShow;
+    const has = !!S.logoData;
+    const align = S.logoAlign || 'center';
+    const prev = has
+        ? '<img src="' + S.logoData + '" style="max-width:100%;max-height:50px;object-fit:contain;display:block;' + window.__logoOutlineFilter(S.logoOutline) + '">'
+        : '<span class="text-[10px] text-[#5E4B8B] opacity-60 font-bold">未设置 LOGO（支持 PNG 透明）</span>';
+    const alignBtn = function (a, txt) {
+        return '<button onclick="window.setModuleLogoAlign(\'' + ns + '\',\'' + a + '\')" class="' +
+            (align === a ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') +
+            ' border-[2px] border-[#5E4B8B] rounded-lg py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">' + txt + '</button>';
+    };
+    return '' +
+    '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">' + (label || '标题LOGO') + '</div>' +
+    '<div class="w-full border-[1.5px] border-[#5E4B8B] rounded-lg bg-white/70 p-2 mb-2">' +
+        '<div class="w-full h-[54px] mb-2 rounded-md border border-dashed border-[#5E4B8B] flex items-center justify-center overflow-hidden" style="background-image:repeating-conic-gradient(#f1f0f7 0% 25%,#ffffff 0% 50%);background-size:14px 14px;background-position:50% 50%;">' + prev + '</div>' +
+        '<div class="grid grid-cols-2 gap-1.5">' +
+            '<button onclick="window.uploadModuleLogo(\'' + ns + '\')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5"><i class="fa-solid fa-upload mr-1"></i>本地上传</button>' +
+            '<button onclick="window.pickModuleLogoFromLib(\'' + ns + '\')" class="bg-[#6D82EE] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5"><i class="fa-solid fa-images mr-1"></i>图片库选择</button>' +
+        '</div>' +
+        '<div class="grid grid-cols-2 gap-1.5 mt-1.5">' +
+            '<button onclick="window.clearModuleLogo(\'' + ns + '\')" class="bg-[#F87171] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">清除LOGO</button>' +
+            '<button onclick="window.toggleModuleLogoShow(\'' + ns + '\')" class="' + (showOn ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + ' border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">显示:' + (showOn ? '开' : '关') + '</button>' +
+        '</div>' +
+        '<div class="flex items-center gap-1 mt-1.5">' +
+            '<span class="text-[10px] font-bold text-[#5E4B8B] shrink-0">对齐</span>' +
+            '<div class="flex-1 grid grid-cols-3 gap-1">' + alignBtn('left', '左') + alignBtn('center', '中') + alignBtn('right', '右') + '</div>' +
+        '</div>' +
+        '<div class="flex items-center justify-between mt-1.5">' +
+            '<span class="text-[10px] font-bold text-[#5E4B8B]">投影立体感</span>' +
+            '<button onclick="window.toggleModuleLogoShadow(\'' + ns + '\')" class="' + (S.logoShadow ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + ' border-[2px] border-[#5E4B8B] rounded-full px-3 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">' + (S.logoShadow ? '开' : '关') + '</button>' +
+        '</div>' +
+    '</div>';
+};
+window.__getLogoCtx = function (ns) {
+    if (ns === 'ovo') {
+        return {
+            S: window.ovoSettings || {},
+            slot: 'ovoLogoSlot', wrap: 'ovoTitleWrap', hideWrapWhenEmpty: true,
+            save: function () { try { localStorage.setItem('ovoSettings', JSON.stringify(window.ovoSettings)); } catch (e) {} },
+            rerender: function () {
+                try { window.renderModuleLogo('ovo'); } catch (e) {}
+                try { if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena(); } catch (e) {}
+            },
+            repanel: function () { try { if (window.__rebuildOvoPanel) window.__rebuildOvoPanel(); } catch (e) {} }
+        };
+    }
+    if (ns === 'ss') {
+        return {
+            S: window.ssCapsuleSettings || {},
+            slot: 'ssLogoSlot', wrap: 'ssTitleWrap', hideWrapWhenEmpty: false,
+            save: function () { try { localStorage.setItem('ssCapsuleSettings', JSON.stringify(window.ssCapsuleSettings)); } catch (e) {} },
+            rerender: function () {
+                try { window.renderModuleLogo('ss'); } catch (e) {}
+                try { if (typeof renderSessionSection === 'function') renderSessionSection(); } catch (e) {}
+            },
+            repanel: function () { try { if (window.__rebuildSsPanel) window.__rebuildSsPanel(); } catch (e) {} }
+        };
+    }
+    return null;
+};
+window.renderModuleLogo = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    const S = ctx.S;
+    const slot = document.getElementById(ctx.slot);
+    if (!slot) return;
+    const wrap = document.getElementById(ctx.wrap);
+    const on = !!S.logoShow && !!S.logoData;
+    if (wrap) {
+        try {
+            // 【悬浮独立】绝对定位 + 最高层级 + 不吃点击，完全脱离文档流，绝不影响任何元素
+            wrap.style.position = 'absolute';
+            wrap.style.left = '0';
+            wrap.style.right = '0';
+            wrap.style.top = ((S.logoTop === undefined) ? 0 : S.logoTop) + 'px';
+            wrap.style.zIndex = '80';
+            wrap.style.pointerEvents = 'none';
+            wrap.style.margin = '0';
+            wrap.style.width = 'auto';
+            wrap.style.height = 'auto';
+            wrap.classList.remove('mb-3', 'mb-5');
+            if (ctx.hideWrapWhenEmpty) wrap.classList.toggle('hidden', !on);
+        } catch (e) {}
+    }
+    if (!on) { slot.innerHTML = ''; slot.style.display = 'none'; return; }
+    slot.style.display = 'flex';
+    const a = S.logoAlign || 'center';
+    slot.style.justifyContent = (a === 'left') ? 'flex-start' : (a === 'right' ? 'flex-end' : 'center');
+    const w = S.logoW || 160;
+    const h = S.logoH || 0;
+    let img = '<img src="' + S.logoData + '" style="width:' + w + 'px;' + (h > 0 ? 'height:' + h + 'px;' : 'height:auto;') +
+        'object-fit:contain;display:block;opacity:' + Math.max(0.1, Math.min(1, (S.logoOpacity || 100) / 100)) +
+        ';transform:translate(' + (S.logoX || 0) + 'px,' + (S.logoY || 0) + 'px) rotate(' + (S.logoRotate || 0) + 'deg);' +
+        (S.logoShadow ? 'filter:drop-shadow(0 3px 0 rgba(94,75,139,0.35));' : '') + '">';
+    const ow = Math.round(Number(S.logoOutline) || 0);
+    for (let i = 0; i < ow; i++) {
+        img = '<span style="display:inline-block;line-height:0;' + window.__logoOutlineFilter(1) + '">' + img + '</span>';
+    }
+    slot.innerHTML = img;
+};
+window.uploadModuleLogo = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    if (!window.pickImages) { alert('图片上传组件尚未就绪，请刷新页面后重试'); return; }
+    window.pickImages(function (files) {
+        if (!files || !files.length) return;
+        const f = files[0];
+        const apply = function (dataUrl) {
+            if (!dataUrl) { alert('图片读取失败，请重试'); return; }
+            ctx.S.logoData = dataUrl;
+            ctx.S.logoShow = 1;
+            ctx.save(); ctx.rerender(); ctx.repanel();
+        };
+        if (window.__fileToResizedDataURL) window.__fileToResizedDataURL(f, 512, 0.92, apply);
+        else { const r = new FileReader(); r.onload = function (e) { apply(e.target.result); }; r.readAsDataURL(f); }
+    });
+};
+window.pickModuleLogoFromLib = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    if (!window.openCardImgPicker) { alert('图片库组件尚未就绪，请刷新页面后重试'); return; }
+    window.openCardImgPicker(function (u) {
+        if (!u) return;
+        ctx.S.logoData = u;
+        ctx.S.logoShow = 1;
+        ctx.save(); ctx.rerender(); ctx.repanel();
+    });
+};
+window.clearModuleLogo = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    ctx.S.logoData = '';
+    ctx.save(); ctx.rerender(); ctx.repanel();
+};
+window.toggleModuleLogoShow = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    ctx.S.logoShow = ctx.S.logoShow ? 0 : 1;
+    ctx.save(); ctx.rerender(); ctx.repanel();
+};
+window.setModuleLogoAlign = function (ns, a) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    ctx.S.logoAlign = a;
+    ctx.save(); ctx.rerender(); ctx.repanel();
+};
+window.toggleModuleLogoShadow = function (ns) {
+    const ctx = window.__getLogoCtx(ns);
+    if (!ctx) return;
+    ctx.S.logoShadow = ctx.S.logoShadow ? 0 : 1;
+    ctx.save(); ctx.rerender(); ctx.repanel();
+};
+setTimeout(function () {
+    try { window.renderModuleLogo('ovo'); } catch (e) {}
+    try { window.renderModuleLogo('ss'); } catch (e) {}
+}, 900);
 // 【全新重构】1V1-擂台区 (玩家独立卡片版 · 像素级复刻设计稿)
-// 每位玩家一张独立底色卡片：顶部左头像+右侧胜/总/负统计，下方为与各玩家的白底对局胶囊
+// 每位玩家一张独立卡片：顶部左头像+右侧胜/总/负统计，下方为与各玩家的白底对局胶囊
 // ==========================================
 (function(){
     // ===== 默认设置（可在1V1擂台右上角 ⚙ 设置面板中实时调节，自动保存到本机localStorage）=====
@@ -6582,7 +6930,14 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
         statCapH: 54, statCapRadius: 14, statNumSize: 24, statPctSize: 12, statGap: 8, statPctGap: 4, statTotalCapSize: 54, statTotalNumSize: 24,
         vsCapH: 46, vsCapRadius: 14, vsCapW: 64, vsNumSize: 24, vsPctSize: 14, vsPillW: 36, vsTextSize: 20,
         vsRowGap: 10, vsPad: 8, vsCardRadius: 14, vsInnerGap: 8,
-        numStroke: 2, showName: 0, titleGap: 12
+        numStroke: 2, showName: 0, titleGap: 12,
+        // ===== 标题 LOGO（替换原「1V1擂台区」文字标题，支持 PNG 异形透明通道）=====
+        logoData: '', logoShow: 1, logoW: 170, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0,
+        logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0,
+        // 卡片与最上方的真实间距（0 = 卡片完全贴合顶部）
+        topGap: 68,
+        // 对局胶囊区头像：悬浮于层级顶部，大小/位移不影响胶囊区任何元素
+        vsAvatarSlotW: 46, vsAvatarX: 0, vsAvatarY: 0
     };
 
     // ===== 设置面板滑块清单（分组显示）=====
@@ -6600,7 +6955,10 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
             { key: 'avatarOutline',   label: '头像白边宽度',     min: 0,  max: 5,   def: 2,  unit: 'px' },
             { key: 'avatarOverhang',  label: '头像上探高度',     min: 0,  max: 70,  def: 22, unit: 'px' },
             { key: 'avatarGap',       label: '头像与数据区间距', min: 0,  max: 40,  def: 10, unit: 'px' },
-            { key: 'vsAvatarSize',   label: '对局胶囊头像大小（独立）', min: 24, max: 90,  def: 46, unit: 'px' }
+            { key: 'vsAvatarSize',   label: '对局胶囊头像大小（独立）', min: 24, max: 90,  def: 46, unit: 'px' },
+            { key: 'vsAvatarSlotW',  label: '头像占位宽度(0=不占)', min: 0, max: 120, def: 46, unit: 'px' },
+            { key: 'vsAvatarX',      label: '头像水平位移(左右镜像)', min: -80, max: 80, def: 0, unit: 'px' },
+            { key: 'vsAvatarY',      label: '头像垂直位移', min: -60, max: 60, def: 0, unit: 'px' }
         ]},
         { group: '顶部统计区 (绿/蓝/红)', items: [
             { key: 'statCapH',      label: '统计胶囊高度',   min: 36, max: 100, def: 54, unit: 'px' },
@@ -6628,8 +6986,19 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
         { group: '文字', items: [
             { key: 'numStroke', label: '数字描边宽度', min: 0, max: 5, step: 0.5, def: 2, unit: 'px' }
         ]},
-        { group: '标题胶囊', items: [
-            { key: 'titleGap', label: '标题与卡片间距', min: 0, max: 40, def: 12, unit: 'px' }
+        { group: '卡片与顶部', items: [
+            { key: 'topGap', label: '卡片与最上方间距(0=贴顶)', min: 0, max: 200, def: 68, unit: 'px' }
+        ]},
+        { group: '标题LOGO（替换文字标题）', items: [
+            { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
+            { key: 'titleGap',    label: 'LOGO与卡片间距', min: 0,    max: 40,  def: 12,  unit: 'px' },
+            { key: 'logoW',       label: 'LOGO宽度',       min: 30,   max: 420, def: 170, unit: 'px' },
+            { key: 'logoH',       label: 'LOGO高度(0=自动)', min: 0,  max: 300, def: 0,   unit: 'px' },
+            { key: 'logoX',       label: 'LOGO水平偏移',   min: -200, max: 200, def: 0,   unit: 'px' },
+            { key: 'logoY',       label: 'LOGO垂直偏移',   min: -100, max: 100, def: 0,   unit: 'px' },
+            { key: 'logoRotate',  label: 'LOGO旋转角度',   min: -180, max: 180, def: 0,   unit: '°' },
+            { key: 'logoOpacity', label: 'LOGO不透明度',   min: 10,   max: 100, def: 100, unit: '%' },
+            { key: 'logoOutline', label: 'LOGO白色描边',   min: 0,    max: 8,   def: 0,   unit: 'px' }
         ]}
     ];
 
@@ -6638,6 +7007,10 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
         const s = JSON.parse(localStorage.getItem('ovoSettings') || '{}');
         for (const k in OVO_DEFAULTS) if (s[k] !== undefined) window.ovoSettings[k] = s[k];
     } catch(e) {}
+
+    // 【视图模式】arena=擂台卡片(默认) / rounds=轮次信息(第二视图)
+    window.ovoViewMode = 'arena';
+    try { const m = localStorage.getItem('ovoViewMode'); if (m === 'arena' || m === 'rounds') window.ovoViewMode = m; } catch(e) {}
 
     const saveOvoSettings = function() {
         try { localStorage.setItem('ovoSettings', JSON.stringify(window.ovoSettings)); } catch(e) {}
@@ -6675,11 +7048,19 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
             <span class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">卡片上显示玩家名字</span>
             <button id="ovoShowNameBtn" onclick="window.toggleOvoShowName()" class="border-[2px] border-[#5E4B8B] rounded-full px-3 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ${window.ovoSettings.showName ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]'}">${window.ovoSettings.showName ? '开' : '关'}</button>
         </div>
+        ${window.__logoPanelHtml ? window.__logoPanelHtml('ovo', window.ovoSettings, '标题LOGO（替换文字标题）') : ''}
+        <div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">视图模式</div>
+        <div class="grid grid-cols-2 gap-2">
+            <button id="ovoViewArena" onclick="window.setOvoViewMode('arena')" class="border-[2px] border-[#5E4B8B] rounded-full py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ${window.ovoViewMode === 'arena' ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]'}">擂台卡片</button>
+            <button id="ovoViewRounds" onclick="window.setOvoViewMode('rounds')" class="border-[2px] border-[#5E4B8B] rounded-full py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ${window.ovoViewMode === 'rounds' ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]'}">轮次信息</button>
+        </div>
         <div class="flex justify-end mt-2">
             <button onclick="window.resetOvoSettings()" class="bg-[#FDE047] border-[2px] border-[#5E4B8B] rounded-full px-3 py-1 font-black text-[#5E4B8B] text-[10px] sm:text-xs shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none hover:brightness-110">恢复默认</button>
         </div>`;
         panel.innerHTML = html;
     };
+
+    window.__rebuildOvoPanel = function () { ovoPanelBuilt = false; buildOvoPanel(); };
 
     window.toggleOvoSettings = function() {
         const panel = document.getElementById('ovoSettingsPanel');
@@ -6713,8 +7094,23 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
     window.resetOvoSettings = function() {
         window.ovoSettings = Object.assign({}, OVO_DEFAULTS);
         saveOvoSettings();
+        // 恢复默认视图为擂台卡片
+        window.ovoViewMode = 'arena';
+        try { localStorage.setItem('ovoViewMode', 'arena'); } catch(e) {}
         ovoPanelBuilt = false;
         buildOvoPanel();
+        if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena();
+    };
+
+    // 【视图切换】arena=擂台卡片(默认) / rounds=轮次信息(第二视图)
+    window.setOvoViewMode = function(mode) {
+        if (mode !== 'arena' && mode !== 'rounds') return;
+        window.ovoViewMode = mode;
+        try { localStorage.setItem('ovoViewMode', mode); } catch(e) {}
+        const a = document.getElementById('ovoViewArena');
+        const r = document.getElementById('ovoViewRounds');
+        if (a) { a.classList.toggle('bg-[#4ADE80]', mode === 'arena'); a.classList.toggle('bg-[#94A3B8]', mode !== 'arena'); }
+        if (r) { r.classList.toggle('bg-[#4ADE80]', mode === 'rounds'); r.classList.toggle('bg-[#94A3B8]', mode !== 'rounds'); }
         if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena();
     };
 
@@ -6772,16 +7168,18 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
         // 标题胶囊与下方卡片的间距
         const ovoTitleWrap = document.getElementById('ovoTitleWrap');
         if (ovoTitleWrap) ovoTitleWrap.style.marginBottom = (S.titleGap === undefined ? 12 : S.titleGap) + 'px';
+        try { window.renderModuleLogo('ovo'); } catch (eLogo) {}
 
         // 顶部三个统计项 (绿=胜, 蓝=总【正圆形】, 红=负; 百分比移到胶囊外面下方)
+        // 【中线严格水平对齐】胶囊统一垂直居中；百分比改为绝对定位挂在胶囊下方，不参与高度计算
         const statCap = (bg, borderColor, num, pct, isCircle) => {
             const capStyle = isCircle
                 ? `width:${S.statTotalCapSize}px;height:${S.statTotalCapSize}px;border-radius:9999px;`
                 : `width:100%;height:${S.statCapH}px;border-radius:${S.statCapRadius}px;`;
             return `
-            <div class="flex flex-col items-center justify-start" style="${isCircle ? 'flex:0 0 auto;' : 'flex:1 1 0;min-width:0;'}gap:${S.statPctGap}px;">
+            <div class="flex items-center justify-center" style="position:relative;${isCircle ? 'flex:0 0 auto;' : 'flex:1 1 0;min-width:0;'}height:${S.statCapH}px;">
                 <div class="flex items-center justify-center font-black text-white" style="background:${bg};border:2px solid ${borderColor};${capStyle}box-shadow:0 2px 0 rgba(94,75,139,0.25);line-height:1;font-size:${isCircle ? S.statTotalNumSize : S.statNumSize}px;${numStrokeCss(S.numStroke)}">${num}</div>
-                ${pct !== null ? `<span class="font-black text-white" style="font-size:${S.statPctSize}px;line-height:1;${numStrokeCss(Math.min(S.numStroke, 2))}">${pct}</span>` : ''}
+                ${pct !== null ? `<span class="font-black text-white" style="position:absolute;left:0;right:0;top:100%;margin-top:${S.statPctGap}px;text-align:center;font-size:${S.statPctSize}px;line-height:1;${numStrokeCss(Math.min(S.numStroke, 2))}">${pct}</span>` : ''}
             </div>`;
         };
 
@@ -6799,9 +7197,19 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
             const pillBg = myWins > oppWins ? '#22C55E' : (myWins < oppWins ? '#E11D48' : '#EAB308');
             const pillBorder = myWins > oppWins ? '#15803D' : (myWins < oppWins ? '#9F1239' : '#B45309');
 
+            // 【头像悬浮于层级顶部】占位宽度独立可调；头像本身绝对定位，大小/位移不影响胶囊区任何元素
+            // 左边 +X 向右、右边 -X 向左 —— 以中轴为界的镜像位移
+            const vsAva = (player, side) => {
+                const tX = (side === 'left') ? (S.vsAvatarX || 0) : -(S.vsAvatarX || 0);
+                return `<div class="shrink-0" style="position:relative;width:${S.vsAvatarSlotW}px;height:1px;flex:0 0 auto;">
+                    <div style="position:absolute;left:50%;top:50%;transform:translate(calc(-50% + ${tX}px), calc(-50% + ${S.vsAvatarY || 0}px));z-index:40;pointer-events:none;line-height:0;">
+                        ${sticker(avatarImg(player, S.vsAvatarSize), S.avatarOutline)}
+                    </div>
+                </div>`;
+            };
             return `
-            <div class="w-full bg-white flex items-center justify-between overflow-x-auto" style="border:2px solid #5E4B8B;border-radius:${S.vsCardRadius}px;padding:${S.vsPad}px;gap:${S.vsInnerGap}px;box-shadow:0 2px 0 rgba(94,75,139,0.2);">
-                <div class="shrink-0">${sticker(avatarImg(p, S.vsAvatarSize), S.avatarOutline)}</div>
+            <div class="w-full bg-white flex items-center justify-between" style="position:relative;overflow:visible;border:2px solid #5E4B8B;border-radius:${S.vsCardRadius}px;padding:${S.vsPad}px;gap:${S.vsInnerGap}px;box-shadow:0 2px 0 rgba(94,75,139,0.2);">
+                ${vsAva(p, 'left')}
                 <div class="flex flex-col items-center justify-center shrink-0" style="gap:2px;">
                     <div class="flex items-center justify-center font-black text-white" style="width:${S.vsCapW}px;height:${S.vsCapH}px;background:${p.color};border:2px solid #5E4B8B;border-radius:${S.vsCapRadius}px;font-size:${S.vsNumSize}px;line-height:1;${numStrokeCss(S.numStroke)}">${myWins}</div>
                     <span class="font-black" style="font-size:${S.vsPctSize}px;color:#5E4B8B;line-height:1;">${myPct}</span>
@@ -6814,7 +7222,7 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
                     <div class="flex items-center justify-center font-black text-white" style="width:${S.vsCapW}px;height:${S.vsCapH}px;background:${o.color};border:2px solid #5E4B8B;border-radius:${S.vsCapRadius}px;font-size:${S.vsNumSize}px;line-height:1;${numStrokeCss(S.numStroke)}">${oppWins}</div>
                     <span class="font-black" style="font-size:${S.vsPctSize}px;color:#5E4B8B;line-height:1;">${oppPct}</span>
                 </div>
-                <div class="shrink-0">${sticker(avatarImg(o, S.vsAvatarSize), S.avatarOutline)}</div>
+                ${vsAva(o, 'right')}
             </div>`;
         };
 
@@ -6840,7 +7248,7 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
                         ${sticker(avatarImg(p, S.avatarSize), S.avatarOutline)}
                     </div>
                     <div class="flex-1 flex flex-col justify-start" style="min-width:0;">
-                        <div class="flex items-start" style="gap:${S.statGap}px;">
+                        <div class="flex items-center" style="gap:${S.statGap}px;padding-bottom:${Math.round((S.statPctSize || 12) + (S.statPctGap || 4) + 4)}px;">
                             ${statCap('#22C55E', '#15803D', wins, winPct, false)}
                             ${statCap('#3B82F6', '#1D4ED8', total, null, true)}
                             ${statCap('#E11D48', '#9F1239', loses, losePct, false)}
@@ -6854,8 +7262,47 @@ if(typeof window.renderMethodDetail2Section === 'function') window.renderMethodD
             </div>`;
         };
 
-        // 卡片纵向无限延伸 (顶部留出设置按钮与头像上探的空间)
-        content.innerHTML = `<div class="w-full flex flex-col items-center" style="gap:${S.cardGap}px;padding-top:${S.avatarOverhang + 46}px;">${active.map(buildPlayerCard).join('')}</div>`;
+        // ===== 第二视图：轮次信息（原版视图，按对局逐条列出 轮次/胜者/败者/方式）=====
+        const buildRoundsView = () => {
+            if (ovoMatches.length === 0) {
+                return `<div class="w-full text-center font-bold text-[#5E4B8B] py-8" style="font-size:13px;">暂无1V1对局记录</div>`;
+            }
+            const rows = ovoMatches.map(m => {
+                const w = active.find(p => p.id === m.winner);
+                const l = active.find(p => p.id === m.loser);
+                const wName = w ? w.name : '未知';
+                const lName = l ? l.name : '未知';
+                return `
+                <div class="w-full flex items-center justify-between" style="background:#fff;border:2px solid #5E4B8B;border-radius:${S.vsCardRadius}px;padding:${S.vsPad}px;gap:${S.vsInnerGap}px;box-shadow:0 2px 0 rgba(94,75,139,0.2);">
+                    <div class="flex flex-col items-center justify-center shrink-0" style="min-width:38px;">
+                        <span class="font-black text-[#5E4B8B]" style="font-size:${S.statNumSize}px;line-height:1;">${m.round}</span>
+                        <span class="text-[9px] text-gray-400 leading-tight">轮次</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-1 flex-1 min-w-0">
+                        ${sticker(avatarImg(w, S.vsAvatarSize), S.avatarOutline)}
+                        <span class="font-black truncate" style="font-size:13px;color:#15803D;">${wName}</span>
+                    </div>
+                    <span class="font-black text-gray-400 shrink-0" style="font-size:11px;letter-spacing:1px;">VS</span>
+                    <div class="flex items-center justify-center gap-1 flex-1 min-w-0">
+                        <span class="font-black truncate" style="font-size:13px;color:#9F1239;">${lName}</span>
+                        ${sticker(avatarImg(l, S.vsAvatarSize), S.avatarOutline)}
+                    </div>
+                    <span class="font-black text-gray-500 shrink-0" style="font-size:10px;">${m.method || ''}</span>
+                </div>`;
+            }).join('');
+            return `<div class="w-full flex flex-col items-center" style="gap:${S.vsRowGap}px;max-width:${S.cardMaxWidth}px;margin:0 auto;">${rows}</div>`;
+        };
+
+        // ===== 视图切换：擂台卡片(默认) / 轮次信息(第二视图) =====
+        if ((window.ovoViewMode || 'arena') === 'rounds') {
+            content.innerHTML = buildRoundsView();
+            return;
+        }
+
+        // 卡片纵向无限延伸 (默认擂台卡片视图，顶部留出设置按钮与头像上探的空间)
+        // 【与最上方的间距】topGap = 0 时卡片顶边完全贴合顶部（头像按设置上探，可自由超出）
+        const _topGap = (S.topGap === undefined) ? 68 : S.topGap;
+        content.innerHTML = `<div class="w-full flex flex-col items-center" style="gap:${S.cardGap}px;padding-top:${Math.max(0, _topGap)}px;">${active.map(buildPlayerCard).join('')}</div>`;
     };
 
     // ===== 设置按钮显隐：仅当 1V1 擂台模块可见时显示 (MutationObserver 零侵入监听) =====
@@ -6893,6 +7340,7 @@ function renderSessionSection() {
             const tg = (window.ssCapsuleSettings.titleGap === undefined) ? 12 : window.ssCapsuleSettings.titleGap;
             ssTitleWrap.style.marginBottom = tg + 'px';
         }
+        try { window.renderModuleLogo('ss'); } catch (eLogo) {}
 
         // 【全新新增】视图切换：胶囊长条(默认) / 经典表格
         const capsuleWrap = document.getElementById('sessionCapsuleView');
@@ -6900,6 +7348,12 @@ function renderSessionSection() {
         const showCapsule = !!(capsuleWrap && window.renderSessionCapsules && (window.ssViewMode || 'capsule') === 'capsule');
         if (capsuleWrap) capsuleWrap.classList.toggle('hidden', !showCapsule);
         if (classicWrap) classicWrap.classList.toggle('hidden', showCapsule);
+        // 【横条与最上方的间距】0 = 完全贴合顶部
+        try {
+            const btg = (window.ssCapsuleSettings.barTopGap === undefined) ? 0 : window.ssCapsuleSettings.barTopGap;
+            if (capsuleWrap) capsuleWrap.style.paddingTop = btg + 'px';
+            if (classicWrap) classicWrap.style.marginTop = btg + 'px';
+        } catch (eBtg) {}
 
         if (gameData.sessions.length === 0) {
             els.sessionTbody.innerHTML = '';
@@ -7028,7 +7482,14 @@ function renderSessionSection() {
             // 时间: 胶囊 f6e243 / 描边 cc7c00 / 文字白 / 文字描边 cc7c00
             dateCapBg: '#f6e243', dateCapBd: '#cc7c00', dateCapText: '#FFFFFF', dateCapTs: '#cc7c00',
             // 得分文字
-            scoreText: '#FFFFFF', scoreTs: '#5E4B8B'
+            scoreText: '#FFFFFF', scoreTs: '#5E4B8B',
+            // ===== 标题 LOGO（替换原「场次记录」文字标题，支持 PNG 异形透明通道）=====
+            logoData: '', logoShow: 1, logoW: 200, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0,
+            logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0,
+            // 首根横条与最上方的真实间距（0 = 完全贴合顶部；默认留出悬浮头像的空间）
+            barTopGap: 26,
+            // 横条内胜利玩家名字（白色，独立大小/位移，不影响任何其他元素）
+            winNameShow: 1, winNameSize: 18, winNameX: 62, winNameY: 0, winNameStroke: 2
         };
 
         // ===== 视图模式 (默认胶囊长条视图) =====
@@ -7088,9 +7549,28 @@ function renderSessionSection() {
                 { key: 'barOpacity',  label: '底色不透明度',   min: 20, max: 100, def: 100, unit: '%' }
             ]},
             { group: '标题 / 胶囊间距', items: [
-                { key: 'titleGap', label: '标题与内容间距', min: 0, max: 40, def: 12, unit: 'px' },
                 { key: 'capGap1',  label: '轮次↔时间 间距', min: 0, max: 40, def: 8,  unit: 'px' },
                 { key: 'capGap2',  label: '时间↔局次 间距', min: 0, max: 40, def: 8,  unit: 'px' }
+            ]},
+            { group: '横条与顶部', items: [
+                { key: 'barTopGap', label: '横条与最上方间距(0=贴顶)', min: 0, max: 200, def: 26, unit: 'px' }
+            ]},
+            { group: '胜利者名字（横条内）', items: [
+                { key: 'winNameSize',   label: '名字大小',   min: 8,   max: 48,  def: 18, unit: 'px' },
+                { key: 'winNameX',      label: '名字横轴位置', min: 0,  max: 100, def: 62, unit: '%' },
+                { key: 'winNameY',      label: '名字垂直偏移', min: -60, max: 60, def: 0,  unit: 'px' },
+                { key: 'winNameStroke', label: '名字描边宽度', min: 0,  max: 6,   def: 2,  unit: 'px' }
+            ]},
+            { group: '标题LOGO（替换文字标题）', items: [
+                { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
+                { key: 'titleGap',    label: 'LOGO与内容间距', min: 0,    max: 40,  def: 12,  unit: 'px' },
+                { key: 'logoW',       label: 'LOGO宽度',       min: 30,   max: 420, def: 200, unit: 'px' },
+                { key: 'logoH',       label: 'LOGO高度(0=自动)', min: 0,  max: 300, def: 0,   unit: 'px' },
+                { key: 'logoX',       label: 'LOGO水平偏移',   min: -200, max: 200, def: 0,   unit: 'px' },
+                { key: 'logoY',       label: 'LOGO垂直偏移',   min: -100, max: 100, def: 0,   unit: 'px' },
+                { key: 'logoRotate',  label: 'LOGO旋转角度',   min: -180, max: 180, def: 0,   unit: '°' },
+                { key: 'logoOpacity', label: 'LOGO不透明度',   min: 10,   max: 100, def: 100, unit: '%' },
+                { key: 'logoOutline', label: 'LOGO白色描边',   min: 0,    max: 8,   def: 0,   unit: 'px' }
             ]},
             { group: '轮次胶囊 (红)', items: [
                 { key: 'numCapW',      label: '宽度(0=自动,纵向对齐)', min: 0,  max: 200, def: 52, unit: 'px' },
@@ -7147,6 +7627,7 @@ function renderSessionSection() {
                 <button id="sscViewCapsule" onclick="window.setSsViewMode('capsule')" class="flex-1 border-[2px] border-[#5E4B8B] rounded-full py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ${window.ssViewMode === 'capsule' ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]'}">胶囊长条</button>
                 <button id="sscViewClassic" onclick="window.setSsViewMode('classic')" class="flex-1 border-[2px] border-[#5E4B8B] rounded-full py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ${window.ssViewMode === 'classic' ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]'}">经典表格</button>
             </div>`;
+            html += (window.__logoPanelHtml ? window.__logoPanelHtml('ss', window.ssCapsuleSettings, '标题LOGO（替换文字标题）') : '');
             SS_SLIDERS.forEach(g => {
                 html += `<div class="mb-2">
                     <div class="text-[10px] font-black text-[#5E4B8B] mb-1 opacity-70">${g.group}</div>
@@ -7166,6 +7647,8 @@ function renderSessionSection() {
             </div>`;
             panel.innerHTML = html;
         };
+
+        window.__rebuildSsPanel = function () { sscPanelBuilt = false; buildPanel(); };
 
         // ===== 面板开关 =====
         window.toggleSsCapsuleSettings = function() {
@@ -7238,14 +7721,26 @@ function renderSessionSection() {
                 // 【关键】头像为悬浮于长条之上的独立元素 (绝对定位)，大小/位置独立调整，不影响条内其他任何元素
                 const avatarHtml = wp ? `<div class="absolute" style="left:${S.avatarX}%;top:calc(50% + ${S.avatarY}px);transform:translate(-50%,-50%);z-index:10;">${sticker(avatarImg(wp, S.avatarSize), S.avatarOutline)}</div>` : '';
 
+                // 【横条内胜利玩家名字】绝对定位悬浮，大小/位移不影响任何其他元素
+                let nameHtml = '';
+                if (wp && S.winNameShow) {
+                    const nStroke = (S.winNameStroke || 0) > 0
+                        ? `-webkit-text-stroke:${S.winNameStroke}px #5E4B8B;paint-order:stroke fill;`
+                        : '';
+                    nameHtml = `<div class="absolute" style="left:${S.winNameX}%;top:calc(50% + ${S.winNameY || 0}px);transform:translate(-50%,-50%);z-index:20;pointer-events:none;max-width:40%;">
+                        <span class="font-black whitespace-nowrap truncate block" style="font-size:${S.winNameSize}px;color:#FFFFFF;line-height:1;${nStroke}text-shadow:0 1px 2px rgba(94,75,139,0.55);">${wp.name}</span>
+                    </div>`;
+                }
+                // 首根横条：顶部不再预留悬浮头像空间，由 barTopGap 精确控制（头像为绝对定位，可自由超出）
                 return `
-                <div style="padding:${overhang}px 0;">
+                <div style="padding:${idx === 0 ? 0 : overhang}px 0 ${overhang}px;">
                     <div class="w-full flex items-center relative" style="height:${S.barH}px;background:${barColor};${S.barBorder > 0 ? `border:${S.barBorder}px solid #5E4B8B;` : ''}border-radius:${S.barRadius}px;padding:0 ${S.barPadX}px;box-shadow:0 3px 0 rgba(94,75,139,0.3);">
                         ${capSpan(S.numCapBg, S.numCapBd, S.numCapText, S.numCapTs, idx + 1, S.numCapW, S.numCapH, S.numCapRadius, S.numBdW, S.numFontSize, S.numTsW, 0)}
                         ${capSpan(S.dateCapBg, S.dateCapBd, S.dateCapText, S.dateCapTs, s.date, S.dateCapW, S.dateCapH, S.dateCapRadius, S.dateBdW, S.dateFontSize, S.dateTsW, S.capGap1)}
                         ${capSpan(S.rangeCapBg, S.rangeCapBd, S.rangeCapText, S.rangeCapTs, `${s.start} – ${s.end}`, S.rangeCapW, S.rangeCapH, S.rangeCapRadius, S.rangeBdW, S.rangeFontSize, S.rangeTsW, S.capGap2)}
                         ${avatarHtml}
                         ${scoreHtml}
+                        ${nameHtml}
                     </div>
                 </div>`;
             }).join('');
@@ -9810,13 +10305,55 @@ window.openSessionSplitModal = function(idx) {
 };
 
 function saveData() {
-            localStorage.setItem('unoInfinityPro', JSON.stringify(gameData));
+            // 【图片库持久化修复】localImageLibrary 单独存一个 localStorage 键：
+            // 图片 base64 体积大，混在主数据里极易把 5MB 配额撑爆，导致整个 saveData 静默失败 → 刷新全丢。
+            // 现在主数据(unoInfinityPro)不含图片库，图片库独立存(unoLocalImageLibrary)，互不连累。
+            try {
+                const _lib = gameData.localImageLibrary;
+                let _coreStr;
+                if (_lib) {
+                    const _core = Object.assign({}, gameData);
+                    delete _core.localImageLibrary;
+                    _coreStr = JSON.stringify(_core);
+                } else {
+                    _coreStr = JSON.stringify(gameData);
+                }
+                localStorage.setItem('unoInfinityPro', _coreStr);
+            } catch (e) {
+                // 本地配额可能超限（多为旧版 imageLibrary base64 过大）。降级：临时剔除图片库，保住核心对局/分数数据不丢失。
+                try {
+                    const _lib = gameData.imageLibrary;
+                    gameData.imageLibrary = { items: [] };
+                    localStorage.setItem('unoInfinityPro', JSON.stringify(gameData));
+                    gameData.imageLibrary = _lib;
+                    console.warn('本地存储空间不足，已暂时跳过保存图片库；建议把图片库导出为JSON备份，或删减图片。');
+                } catch (e2) {
+                    console.error('saveData 主数据保存失败：', e2);
+                }
+            }
+            // 后台管理图片库 → 独立键保存（仅在图片库有变动时才写，避免每次计分都序列化大图拖慢程序）
+            if (window.__libDirty) {
+                try {
+                    localStorage.setItem('unoLocalImageLibrary', JSON.stringify(gameData.localImageLibrary || { items: [] }));
+                    window._libSaveWarned = false;
+                    window.__libDirty = false;
+                } catch (eLib) {
+                    // 写不进去也绝不丢图：自动转存 IndexedDB 大容量备用仓库
+                    try { if (window.__persistImageLibrary) window.__persistImageLibrary(); } catch (e3) {}
+                    if (!window._libSaveWarned) {
+                        window._libSaveWarned = true;
+                        alert('提示：浏览器本地存储空间不足，图片已启用「大容量备用仓库」继续保存。\n建议：删减部分图片，或先「导出JSON」备份。');
+                    }
+                }
+            }
             // 【持久化保存】当前进行中的淘汰名单、倒计时、秒表状态，防刷新防关闭
-            localStorage.setItem('unoV2State', JSON.stringify(v2State));
-            localStorage.setItem('unoTimerRemain', timerRemain);
-            localStorage.setItem('unoTrElapsedSeconds', trElapsedSeconds);
-            localStorage.setItem('unoIsTimerRunning', isTimerRunning);
-            localStorage.setItem('unoTrIsRunning', trIsRunning);
+            try {
+                localStorage.setItem('unoV2State', JSON.stringify(v2State));
+                localStorage.setItem('unoTimerRemain', timerRemain);
+                localStorage.setItem('unoTrElapsedSeconds', trElapsedSeconds);
+                localStorage.setItem('unoIsTimerRunning', isTimerRunning);
+                localStorage.setItem('unoTrIsRunning', trIsRunning);
+            } catch (e) {}
             updateUndoRedoButtons();
         }
         
@@ -10113,7 +10650,7 @@ els.playerList.addEventListener('input', e => {
                 const doReset = function () {
                     try {
                         // 1) 清理本程序所有本地存储键（不只是主数据键，避免残留导致"重置没生效"）
-                        const extraKeys = ['ssViewMode', 'ssCapsuleSettings', 'ovoSettings', 'lsSettings',
+                        const extraKeys = ['ssViewMode', 'ssCapsuleSettings', 'ovoSettings', 'ovoViewMode', 'lsSettings',
                             'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings', 'achSettings',
                             'activeAudienceView', 'customCardColor'];
                         const keysToRemove = [];
@@ -10555,7 +11092,35 @@ els.playerList.addEventListener('input', e => {
             });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dataRaw), "原始记录");
             
-            const configStr = JSON.stringify(gameData);
+            // 【完整备份】把程序里所有独立存储的参数设置一并打包，确保导入后可 100% 还原
+            // （1V1 擂台、场次记录、布局、轮盘、成就、卡片底色、模块显隐等）
+            // 【全量备份】程序内所有独立存放的信息：样式/视图设置 + 运行中状态 + 图片库 + 主题
+            const SETTING_KEYS = ['ovoSettings', 'ovoViewMode', 'ssViewMode', 'ssCapsuleSettings',
+                'lsSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
+                'achSettings', 'customCardColor', 'unoHiddenModules', 'unoViewConfigs', 'activeAudienceView',
+                'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning'];
+            const appSettings = {};
+            SETTING_KEYS.forEach(k => {
+                try {
+                    const raw = localStorage.getItem(k);
+                    if (raw === null) return;
+                    try { appSettings[k] = JSON.parse(raw); } catch (e) { appSettings[k] = raw; }
+                } catch (e2) {}
+            });
+            // 图片库：再单独存一份，导入后 100% 还原（不受 gameData 体积裁剪影响）
+            try { appSettings.__imageLibrary__ = (gameData.localImageLibrary && gameData.localImageLibrary.items) ? gameData.localImageLibrary.items : []; } catch (eIL) {}
+            try { appSettings.__imageLibraryOld__ = (gameData.imageLibrary && gameData.imageLibrary.items) ? gameData.imageLibrary.items : []; } catch (eIL2) {}
+            // 主题（背景图 / 卡片底色 / 字体）
+            try {
+                appSettings.__theme__ = {
+                    bg: document.body.style.backgroundImage || '',
+                    cardColor: localStorage.getItem('customCardColor') || '',
+                    font: document.body.style.fontFamily || ''
+                };
+            } catch (eTh) {}
+            const backupObj = Object.assign({}, gameData, { __appSettings__: appSettings });
+            if (!backupObj.localImageLibrary) backupObj.localImageLibrary = { items: appSettings.__imageLibrary__ || [] };
+            const configStr = JSON.stringify(backupObj);
             const configRows =[];
             for(let i=0; i<configStr.length; i+=30000) {
                 configRows.push([configStr.substring(i, i+30000)]);
@@ -10604,11 +11169,59 @@ els.playerList.addEventListener('input', e => {
                             const parsed = JSON.parse(jsonStr);
                             if (parsed && Array.isArray(parsed.players)) {
                                 gameData = parsed;
+                                // 【完整还原】把备份里所有参数设置写回各自的 localStorage 键
+                                try {
+                                    if (parsed.__appSettings__) {
+                                        const appS = parsed.__appSettings__;
+                                        window.__importedAppSettings = appS;  // 暂存，供图片库/主题还原使用
+                                        Object.keys(appS).forEach(sk => {
+                                            if (sk === '__imageLibrary__' || sk === '__imageLibraryOld__' || sk === '__theme__') return;
+                                            try { localStorage.setItem(sk, JSON.stringify(appS[sk])); } catch (e2) {}
+                                        });
+                                        try {
+                                            const th = appS.__theme__;
+                                            if (th) {
+                                                if (th.bg) document.body.style.backgroundImage = th.bg;
+                                                if (th.font) document.body.style.fontFamily = th.font;
+                                            }
+                                        } catch (eTh2) {}
+                                        delete gameData.__appSettings__;
+                                    }
+                                } catch (e) {}
                                 if(!gameData.sessions) gameData.sessions =[];
                                 if(!gameData.sectionOrder) gameData.sectionOrder = [...defaultSectionOrder];
                                 // ===== 向后兼容：补齐旧导出数据缺失的字段 =====
                                 if (!gameData.customMethods) gameData.customMethods = { win: { categories: [{id:'def',name:'无分类',color:'#A1A1AA'}], items:[] }, lose: { categories: [{id:'def',name:'无分类',color:'#A1A1AA'}], items:[] } };
                                 if (!gameData.imageLibrary) gameData.imageLibrary = { items: [] };
+                                // 后台管理独立图片库：工程文件 → 内存 → localStorage 三源并集，导入后一张都不丢
+                                try {
+                                    let _impArr = [];
+                                    try {
+                                        const _as = window.__importedAppSettings;
+                                        if (_as && Array.isArray(_as.__imageLibrary__)) _impArr = _impArr.concat(_as.__imageLibrary__);
+                                        if (_as && Array.isArray(_as.__imageLibraryOld__)) {
+                                            gameData.imageLibrary = { items: _as.__imageLibraryOld__ };
+                                        }
+                                    } catch (eA) {}
+                                    if (parsed.localImageLibrary && Array.isArray(parsed.localImageLibrary.items)) _impArr = _impArr.concat(parsed.localImageLibrary.items);
+                                    if (gameData.localImageLibrary && Array.isArray(gameData.localImageLibrary.items)) _impArr = _impArr.concat(gameData.localImageLibrary.items);
+                                    try {
+                                        const _lsSaved = localStorage.getItem('unoLocalImageLibrary');
+                                        const _lsParsed = _lsSaved ? JSON.parse(_lsSaved) : null;
+                                        if (_lsParsed && Array.isArray(_lsParsed.items)) _impArr = _impArr.concat(_lsParsed.items);
+                                    } catch (eLs) {}
+                                    const _mg = window.__mergeLibItems || function (a, b) {
+                                        const out = [], seen = {};
+                                        [].concat(a || [], b || []).forEach(function (it) {
+                                            if (!it || !it.url) return;
+                                            const k = String(it.id || it.url);
+                                            if (seen[k]) return; seen[k] = true; out.push(it);
+                                        });
+                                        return out;
+                                    };
+                                    gameData.localImageLibrary = { items: _mg(_impArr, []) };
+                                    window.__libDirty = true;
+                                } catch (eImpLib) { if (!gameData.localImageLibrary) gameData.localImageLibrary = { items: [] }; }
                                 // 为每位玩家补齐统计字段
                                 gameData.players.forEach(p => {
                                     if (p.pkWins === undefined) p.pkWins = 0;
@@ -11742,7 +12355,7 @@ const mobileTabs = {
 'tab5': { name: '详细数据', color: '#93C5FD', modules:['timeHistorySection', 'scoreFlowSection', 'pieChartSection', 'methodStatSection', 'methodDetailSection', 'chartSection', 'radarSection', 'oneVsOneSection', 'sessionSection', 'tableSection'] },
         'tab6': { name: '随机抽选', color: '#7dd3fc', modules:['randomSelectorSection'] },
         'tab7': { name: '实时结算', color: '#d8b4e2', modules:['playerSection', 'timeRecordSection', 'timerSection', 'penaltySection', 'penaltyStatsSection'] },
-        'tab8': { name: '后台管理', color: '#F472B6', modules:['cloudShareSection', 'methodManagerSection', 'dataIOSection'] },
+        'tab8': { name: '后台管理', color: '#F472B6', modules:['cloudShareSection', 'methodManagerSection', 'dataIOSection', 'imageLibrarySection'] },
         'tab9': { name: '动态数据', color: '#6ee7b7', modules:['dynamicDataSection'] }, // <--- 全新：动态数据
         'tab10': { name: '卡牌信息', color: '#E0E7FF', modules:['cardInfoSection'] }  // 原来的卡牌顺延
     };
@@ -11782,6 +12395,12 @@ const mobileTabs = {
                 el.style.order = index; 
             }
         });
+
+        // 2.5 【图片库】切到「后台管理」时刷新网格，并做一次兜底校验（保证一张不丢）
+        if (tabId === 'tab8') {
+            try { if (window.renderImageLibrary) window.renderImageLibrary(); } catch (eLib) {}
+            try { if (window.__hydrateImageLibrary) window.__hydrateImageLibrary(); } catch (eLib2) {}
+        }
 
         // 3. 同步顶部胶囊
         const topText = document.getElementById('topTabText');
@@ -12025,13 +12644,14 @@ window.renderCardInfoSystem = function() {
         let { item, displayCode, catColor } = obj;
         let imgUrl = item.url || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' fill='%239ca3af' font-size='20' font-family='sans-serif' text-anchor='middle' dy='.3em'>无图</text></svg>";
         let crossHtml = window.isCardEditMode ? `<button class="absolute -top-1.5 -right-1.5 bg-[#E11D48] text-white rounded-full w-[16px] h-[16px] flex items-center justify-center border-[1.5px] border-[#5E4B8B] z-20 shadow-sm hover:scale-110" onclick="event.stopPropagation(); window.delCardItem('${item.id}')"><i class="fa-solid fa-times" style="font-size:8px;"></i></button>` : '';
+        let selHtml = window.isCardEditMode ? `<button class="absolute -top-1.5 -left-1.5 w-[18px] h-[18px] rounded-full border-2 border-[#5E4B8B] flex items-center justify-center z-20 ${window.cardSelectedIds && window.cardSelectedIds[item.id] ? 'bg-[#4ADE80]' : 'bg-white'}" onclick="event.stopPropagation(); window.toggleCardSelect('${item.id}')"><i class="fa-solid fa-check text-[9px] text-white"></i></button>` : '';
 
         // 【拖拽标识】：加上 card-item-cap 和 cursor-move (如果是编辑模式)
         let dragClass = window.isCardEditMode ? "card-item-cap cursor-move" : "";
 
         return `
-        <div class="flex flex-col items-center w-full shrink-0 gap-[3px] sm:gap-1.5 relative hover:scale-105 transition-transform ${dragClass}" data-id="${item.id}" onclick="${window.isCardEditMode ? `window.openCardItemModal('${item.categoryId}', '${item.id}')` : `window.openCardDetail('${item.id}')`}">
-            ${crossHtml}
+        <div class="flex flex-col items-center w-full shrink-0 gap-[3px] sm:gap-1.5 relative hover:scale-105 transition-transform ${dragClass}" data-id="${item.id}" onclick="${window.isCardEditMode ? (window.cardMarqueeMode ? `window.toggleCardSelect('${item.id}')` : `window.openCardItemModal('${item.categoryId}', '${item.id}')`) : `window.openCardDetail('${item.id}')`}">
+            ${selHtml}${crossHtml}
             <!-- 图片框 (2:3黑底比例) -->
             <div class="w-full aspect-[2/3] border-[2px] sm:border-[2.5px] border-[#5E4B8B] rounded-[4px] sm:rounded-[6px] overflow-hidden bg-[#111111] flex items-center justify-center shadow-[0_3px_0_#5E4B8B] sm:shadow-[0_4px_0_#5E4B8B] pointer-events-none">
                 <img src="${imgUrl}" class="w-full h-full object-contain" crossorigin="anonymous" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'150\\' height=\\'150\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f3f4f6\\'/><text x=\\'50%\\' y=\\'50%\\' fill=\\'%239ca3af\\' font-size=\\'20\\' font-family=\\'sans-serif\\' text-anchor=\\'middle\\' dy=\\'.3em\\'>失效</text></svg>'">
@@ -12057,9 +12677,9 @@ window.renderCardInfoSystem = function() {
     if (!gridHtml) gridHtml = '<div class="col-span-5 text-center text-[#5E4B8B] font-bold py-4 text-sm">该分类下暂无卡牌</div>';
     grid.innerHTML = gridHtml;
 
-    // 【新增卡牌拖拽排序引擎】
-    if(window.isCardEditMode && window.Sortable) {
-        if(grid.sortableInst) grid.sortableInst.destroy();
+    // 【新增卡牌拖拽排序引擎】（框选模式下暂停拖拽排序，避免手势冲突）
+    if(window.isCardEditMode && window.Sortable && !window.cardMarqueeMode) {
+        if(grid.sortableInst) { try { grid.sortableInst.destroy(); } catch(eS) {} grid.sortableInst = null; }
         grid.sortableInst = new Sortable(grid, {
             animation: 150, delay: 100, delayOnTouchOnly: true,
             filter: '.ignore-drag', // 绝对不能拖动加号！
@@ -12082,6 +12702,27 @@ window.renderCardInfoSystem = function() {
             }
         });
     }
+
+    // 编辑模式下，若已选中卡牌则显示多选操作栏
+    const multiBar = document.getElementById('cardMultiBar');
+    if (multiBar) {
+        const cnt = window.cardSelectedIds ? Object.keys(window.cardSelectedIds).filter(k => window.cardSelectedIds[k]).length : 0;
+        const cntEl = document.getElementById('cardSelCount');
+        if (cntEl) cntEl.textContent = cnt;
+        if (window.isCardEditMode && (cnt > 0 || window.cardMarqueeMode)) { multiBar.classList.remove('hidden'); multiBar.classList.add('flex'); }
+        else { multiBar.classList.add('hidden'); multiBar.classList.remove('flex'); }
+        try {
+            const mBtn = document.getElementById('cardMarqueeBtn');
+            const mHint = document.getElementById('cardMarqueeHint');
+            if (mBtn) {
+                const on = !!window.cardMarqueeMode;
+                mBtn.innerHTML = '<i class="fa-solid fa-object-group mr-1"></i>框选模式：' + (on ? '开' : '关');
+                mBtn.classList.toggle('bg-[#F43F5E]', on);
+                mBtn.classList.toggle('bg-[#9B79FF]', !on);
+            }
+            if (mHint) mHint.classList.toggle('hidden', !window.cardMarqueeMode);
+        } catch (eM) {}
+    }
 };
 
 // 后台开关按钮
@@ -12094,11 +12735,288 @@ window.toggleCardEditMode = function() {
     } else {
         btn.classList.replace('bg-[#F43F5E]', 'bg-[#FBBF24]');
         btn.innerHTML = '<i class="fa-solid fa-pencil text-[#5E4B8B] text-xs sm:text-base"></i>';
+        window.cardSelectedIds = {};
     }
     window.renderCardInfoSystem();
 };
 
-window.switchCardCat = function(id) { window.currentCardCat = id; window.renderCardInfoSystem(); };
+window.switchCardCat = function(id) { window.currentCardCat = id; window.cardSelectedIds = {}; window.renderCardInfoSystem(); };
+
+// =================卡牌多选（编辑模式下删除/移动到分类）=================
+window.cardSelectedIds = window.cardSelectedIds || {};
+
+window.toggleCardSelect = function(id) {
+    if (!window.cardSelectedIds) window.cardSelectedIds = {};
+    if (window.cardSelectedIds[id]) delete window.cardSelectedIds[id];
+    else window.cardSelectedIds[id] = true;
+    window.renderCardInfoSystem();
+};
+
+window.delSelectedCards = function() {
+    const ids = Object.keys(window.cardSelectedIds || {}).filter(k => window.cardSelectedIds[k]);
+    if (!ids.length) return;
+    if (!confirm('确定删除选中的 ' + ids.length + ' 张卡牌吗？')) return;
+    gameData.cardSystem.items = gameData.cardSystem.items.filter(i => !window.cardSelectedIds[i.id]);
+    window.cardSelectedIds = {};
+    saveData(); window.renderCardInfoSystem();
+};
+
+window.openCardMoveDialog = function() {
+    const ids = Object.keys(window.cardSelectedIds || {}).filter(k => window.cardSelectedIds[k]);
+    if (!ids.length) return alert('请先勾选要移动的卡牌');
+    const list = document.getElementById('cardMoveCatList');
+    if (!list) return;
+    list.innerHTML = gameData.cardSystem.categories.map(c => `
+        <button class="bg-[#6D82EE] border-[2.5px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-[13px] shadow-[0_3px_0_#5E4B8B] active:translate-y-1 transition-all" onclick="window.moveSelectedCardsTo('${c.id}')">${c.name}</button>
+    `).join('') + `
+        <button class="bg-[#4ADE80] border-[2.5px] border-[#5E4B8B] rounded-xl py-2 font-black text-white text-[13px] shadow-[0_3px_0_#5E4B8B] active:translate-y-1 transition-all col-span-2" onclick="window.createCatAndMove()"><i class="fa-solid fa-plus mr-1"></i>新建分类并移动</button>`;
+    document.getElementById('cardMoveCatDialog').classList.remove('hidden');
+};
+
+window.moveSelectedCardsTo = function(catId) {
+    const ids = Object.keys(window.cardSelectedIds || {}).filter(k => window.cardSelectedIds[k]);
+    if (!ids.length) return;
+    ids.forEach(id => {
+        const it = gameData.cardSystem.items.find(x => x.id === id);
+        if (it) it.categoryId = catId;
+    });
+    window.cardSelectedIds = {};
+    saveData(); window.renderCardInfoSystem();
+    const dlg = document.getElementById('cardMoveCatDialog');
+    if (dlg) dlg.classList.add('hidden');
+};
+
+// ============================================================
+// 【卡牌批量操作升级】框选(marquee) + 全选/反选 + 复制 + 排序 + 编号重排 ...
+// ============================================================
+window.cardMarqueeMode = window.cardMarqueeMode || false;
+
+(function () {
+    if (document.getElementById('cardMarqueeStyle')) return;
+    const st = document.createElement('style');
+    st.id = 'cardMarqueeStyle';
+    st.textContent = '.card-marquee-mode{ -webkit-user-select:none; user-select:none; } .card-marquee-mode .card-item-cap{ cursor:crosshair !important; }';
+    try { (document.head || document.documentElement).appendChild(st); } catch (e) {}
+})();
+
+function ensureMarqueeRect() {
+    let r = document.getElementById('cardMarqueeRect');
+    if (!r) {
+        r = document.createElement('div');
+        r.id = 'cardMarqueeRect';
+        r.style.cssText = 'position:fixed;z-index:99998;border:2px dashed #5E4B8B;background:rgba(109,130,238,0.18);border-radius:6px;pointer-events:none;display:none;';
+        document.body.appendChild(r);
+    }
+    return r;
+}
+
+function cardsInRect(grid, x1, y1, x2, y2) {
+    const out = [];
+    try {
+        grid.querySelectorAll('.card-item-cap').forEach(function (el) {
+            const r = el.getBoundingClientRect();
+            const hit = !(r.right < x1 || r.left > x2 || r.bottom < y1 || r.top > y2);
+            if (hit && el.dataset.id) out.push(el.dataset.id);
+        });
+    } catch (e) {}
+    return out;
+}
+
+function bindCardMarquee(grid) {
+    if (!grid || grid.__marqueeBound) return;
+    grid.__marqueeBound = true;
+    const rect = ensureMarqueeRect();
+    let start = null, additive = false, moved = false, baseSel = null;
+
+    const onDown = function (e) {
+        if (!window.cardMarqueeMode) return;
+        if (e.button !== undefined && e.button !== 0) return;
+        start = { x: e.clientX, y: e.clientY };
+        additive = !!(e.shiftKey || e.ctrlKey || e.metaKey);
+        moved = false;
+        baseSel = Object.assign({}, window.cardSelectedIds || {});
+        rect.style.display = 'block';
+        rect.style.left = start.x + 'px';
+        rect.style.top = start.y + 'px';
+        rect.style.width = '0px';
+        rect.style.height = '0px';
+    };
+    const onMove = function (e) {
+        if (!start) return;
+        const x = e.clientX, y = e.clientY;
+        const x1 = Math.min(start.x, x), y1 = Math.min(start.y, y);
+        const x2 = Math.max(start.x, x), y2 = Math.max(start.y, y);
+        if (Math.abs(x - start.x) > 4 || Math.abs(y - start.y) > 4) moved = true;
+        rect.style.left = x1 + 'px';
+        rect.style.top = y1 + 'px';
+        rect.style.width = (x2 - x1) + 'px';
+        rect.style.height = (y2 - y1) + 'px';
+        if (moved) {
+            const hits = cardsInRect(grid, x1, y1, x2, y2);
+            try {
+                grid.querySelectorAll('.card-item-cap').forEach(function (el) {
+                    el.style.outline = hits.indexOf(el.dataset.id) >= 0 ? '2px solid #4ADE80' : '';
+                });
+            } catch (e2) {}
+        }
+    };
+    const onUp = function (e) {
+        if (!start) return;
+        const x = e.clientX, y = e.clientY;
+        const x1 = Math.min(start.x, x), y1 = Math.min(start.y, y);
+        const x2 = Math.max(start.x, x), y2 = Math.max(start.y, y);
+        rect.style.display = 'none';
+        try {
+            grid.querySelectorAll('.card-item-cap').forEach(function (el) { el.style.outline = ''; });
+        } catch (e2) {}
+        if (!moved) { start = null; return; }   // 位移过小 → 交给卡片自身的点击逻辑
+        const hits = cardsInRect(grid, x1, y1, x2, y2);
+        const sel = additive ? Object.assign({}, baseSel || {}) : {};
+        hits.forEach(function (id) { sel[id] = true; });
+        window.cardSelectedIds = sel;
+        start = null;
+        window.renderCardInfoSystem();
+    };
+
+    grid.__marqueeHandlers = { onDown: onDown, onMove: onMove, onUp: onUp };
+    grid.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+}
+
+function unbindCardMarquee(grid) {
+    if (!grid || !grid.__marqueeBound) return;
+    const h = grid.__marqueeHandlers;
+    if (h) {
+        try { grid.removeEventListener('pointerdown', h.onDown); } catch (e) {}
+        try { window.removeEventListener('pointermove', h.onMove); } catch (e) {}
+        try { window.removeEventListener('pointerup', h.onUp); } catch (e) {}
+        try { window.removeEventListener('pointercancel', h.onUp); } catch (e) {}
+    }
+    grid.__marqueeBound = false;
+    grid.__marqueeHandlers = null;
+}
+
+window.toggleCardMarquee = function () {
+    window.cardMarqueeMode = !window.cardMarqueeMode;
+    const btn = document.getElementById('cardMarqueeBtn');
+    const hint = document.getElementById('cardMarqueeHint');
+    const grid = document.getElementById('cardGridContainer');
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-object-group mr-1"></i>框选模式：' + (window.cardMarqueeMode ? '开' : '关');
+        btn.classList.toggle('bg-[#F43F5E]', window.cardMarqueeMode);
+        btn.classList.toggle('bg-[#9B79FF]', !window.cardMarqueeMode);
+    }
+    if (hint) hint.classList.toggle('hidden', !window.cardMarqueeMode);
+    if (grid) {
+        if (window.cardMarqueeMode) {
+            grid.classList.add('card-marquee-mode');
+            grid.style.touchAction = 'none';
+            if (grid.sortableInst) { try { grid.sortableInst.destroy(); } catch (e) {} grid.sortableInst = null; }
+            bindCardMarquee(grid);
+        } else {
+            grid.classList.remove('card-marquee-mode');
+            grid.style.touchAction = '';
+            unbindCardMarquee(grid);
+        }
+    }
+    window.renderCardInfoSystem();
+};
+
+// ---------- 批量操作 ----------
+window.getVisibleCardIds = function () {
+    initCardSystem();
+    const items = gameData.cardSystem.items || [];
+    if (!window.currentCardCat || window.currentCardCat === 'ALL') return items.map(function (i) { return i.id; });
+    return items.filter(function (i) { return i.categoryId === window.currentCardCat; }).map(function (i) { return i.id; });
+};
+window.getSelectedCardIds = function () {
+    return Object.keys(window.cardSelectedIds || {}).filter(function (k) { return window.cardSelectedIds[k]; });
+};
+window.cardSelectAll = function () {
+    window.cardSelectedIds = {};
+    window.getVisibleCardIds().forEach(function (id) { window.cardSelectedIds[id] = true; });
+    window.renderCardInfoSystem();
+};
+window.cardInvertSelect = function () {
+    const vis = window.getVisibleCardIds();
+    const sel = window.cardSelectedIds || {};
+    const next = {};
+    vis.forEach(function (id) { if (!sel[id]) next[id] = true; });
+    window.cardSelectedIds = next;
+    window.renderCardInfoSystem();
+};
+window.cardClearSelect = function () {
+    window.cardSelectedIds = {};
+    window.renderCardInfoSystem();
+};
+window.copySelectedCards = function () {
+    const ids = window.getSelectedCardIds();
+    if (!ids.length) { alert('请先勾选或框选要复制的卡牌'); return; }
+    const clones = [];
+    ids.forEach(function (id) {
+        const src = gameData.cardSystem.items.find(function (x) { return x.id === id; });
+        if (!src) return;
+        let c;
+        try { c = JSON.parse(JSON.stringify(src)); } catch (e) { c = Object.assign({}, src); }
+        c.id = 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        c.code = '';
+        clones.push({ afterId: id, item: c });
+    });
+    clones.forEach(function (pair) {
+        const idx = gameData.cardSystem.items.findIndex(function (x) { return x.id === pair.afterId; });
+        if (idx >= 0) gameData.cardSystem.items.splice(idx + 1, 0, pair.item);
+        else gameData.cardSystem.items.push(pair.item);
+    });
+    saveData(); window.renderCardInfoSystem();
+    alert('已复制 ' + clones.length + ' 张卡牌');
+};
+window.moveSelectedCardsEdge = function (edge) {
+    const ids = window.getSelectedCardIds();
+    if (!ids.length) { alert('请先勾选或框选要移动的卡牌'); return; }
+    const picked = [];
+    gameData.cardSystem.items = gameData.cardSystem.items.filter(function (it) {
+        if (window.cardSelectedIds[it.id]) { picked.push(it); return false; }
+        return true;
+    });
+    gameData.cardSystem.items = (edge === 'first') ? picked.concat(gameData.cardSystem.items) : gameData.cardSystem.items.concat(picked);
+    saveData(); window.renderCardInfoSystem();
+};
+window.clearSelectedCardsImage = function () {
+    const ids = window.getSelectedCardIds();
+    if (!ids.length) { alert('请先勾选或框选要清除图片的卡牌'); return; }
+    if (!confirm('确定清除选中 ' + ids.length + ' 张卡牌的图片吗？（名称与文字信息保留）')) return;
+    ids.forEach(function (id) {
+        const it = gameData.cardSystem.items.find(function (x) { return x.id === id; });
+        if (it) it.url = '';
+    });
+    saveData(); window.renderCardInfoSystem();
+};
+window.renumberSelectedCards = function () {
+    const ids = window.getSelectedCardIds();
+    if (!ids.length) { alert('请先勾选或框选要重排编号的卡牌'); return; }
+    if (!confirm('将按当前排列顺序，用「分类名 + 序号」重排选中卡牌的编号，确定继续吗？')) return;
+    const counter = {};
+    gameData.cardSystem.items.forEach(function (it) {
+        const key = it.categoryId || 'none';
+        counter[key] = (counter[key] || 0) + 1;
+        if (!window.cardSelectedIds[it.id]) return;
+        const cat = gameData.cardSystem.categories.find(function (c) { return c.id === it.categoryId; });
+        it.code = (cat ? cat.name : '?') + counter[key];
+    });
+    saveData(); window.renderCardInfoSystem();
+    alert('已重排 ' + ids.length + ' 张卡牌的编号');
+};
+window.createCatAndMove = function () {
+    const name = prompt('请输入新分类名称：');
+    if (!name) return;
+    const palette = (typeof cardPalette !== 'undefined' && cardPalette.length) ? cardPalette : ['#E11D48', '#F59E0B', '#4ADE80', '#60A5FA', '#A78BFA'];
+    const cat = { id: 'cc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: name, color: palette[gameData.cardSystem.categories.length % palette.length] };
+    gameData.cardSystem.categories.push(cat);
+    window.moveSelectedCardsTo(cat.id);
+};
+
 
 // =================后台分类管理=================
 window.openCardCatModal = function(id = null) {
@@ -12178,6 +13096,10 @@ window.openCardItemModal = function(catId, itemId = null) {
         codeIn.value = cat ? `${cat.name}${count}` : `${count}`;
         nameIn.value = ''; urlIn.value = ''; descIn.value = '';
     }
+    // 【新增】同步卡牌图片预览
+    const _prev = document.getElementById('cimUrlPreview');
+    if(_prev){ if(urlIn.value){ _prev.src = urlIn.value; _prev.style.visibility='visible'; } else { _prev.src=''; _prev.style.visibility='hidden'; } }
+
     document.getElementById('cardItemModal').classList.remove('hidden');
 };
 
@@ -13458,10 +14380,11 @@ window.renderMethodManager = function() {
                             return `
                             <!-- 卡片本体 -->
                             <div class="flex flex-col items-center w-[50px] mm-item-cap cursor-move relative group" data-id="${item.id}">
-                                <button class="absolute -top-1.5 -right-1.5 bg-white border-[1px] border-[#333333] rounded-full w-[15px] h-[15px] flex items-center justify-center z-10 mm-del-item-btn shadow-sm" data-id="${item.id}">
+                                ${window.mmMultiMode ? `<button class="absolute -top-1.5 -left-1.5 w-[16px] h-[16px] rounded-full border border-[#333333] flex items-center justify-center z-10 ${window.mmMultiMode && window.mmSelectedIds && window.mmSelectedIds[item.id] ? 'bg-[#4ADE80]' : 'bg-white'}" onclick="event.stopPropagation(); window.toggleMmItemSelect('${item.id}')"><i class="fa-solid fa-check text-[8px] text-white"></i></button>` : ''}
+                                ${window.mmMultiMode ? '' : `<button class="absolute -top-1.5 -right-1.5 bg-white border-[1px] border-[#333333] rounded-full w-[15px] h-[15px] flex items-center justify-center z-10 mm-del-item-btn shadow-sm" data-id="${item.id}">
                                     <i class="fa-solid fa-times text-[8px] text-[#333333] pointer-events-none"></i>
-                                </button>
-                                <div class="w-full aspect-square border-[1.5px] border-[#333333] bg-black flex items-center justify-center overflow-hidden mb-[3px] rounded-sm shadow-sm cursor-pointer active:scale-95 transition-transform" onclick="window.openMmItemDialog('${item.id}')">
+                                </button>`}
+                                <div class="w-full aspect-square border-[1.5px] border-[#333333] bg-black flex items-center justify-center overflow-hidden mb-[3px] rounded-sm shadow-sm cursor-pointer active:scale-95 transition-transform" onclick="${window.mmMultiMode ? `window.toggleMmItemSelect('${item.id}')` : `window.openMmItemDialog('${item.id}')`}">
                                     <img src="${item.url || 'data:image/svg+xml;utf8,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'150\\\' height=\\\'150\\\'><rect width=\\\'100%\\\' height=\\\'100%\\\' fill=\\\'%23f3f4f6\\\'/><text x=\\\'50%\\\' y=\\\'50%\\\' fill=\\\'%239ca3af\\\' font-size=\\\'20\\\' font-family=\\\'sans-serif\\\' text-anchor=\\\'middle\\\' dy=\\\'.3em\\\'>无图</text></svg>'}" class="w-full h-full object-contain bg-[#111111]" crossorigin="anonymous">
                                 </div>
                                 <div class="w-full h-[16px] border-[1px] border-[#333333] flex items-center justify-center rounded-sm shadow-sm" style="background-color: ${cat.color};">
@@ -13487,8 +14410,102 @@ window.renderMethodManager = function() {
 
             const container = document.getElementById('methodManagerContent');
             if(container) container.innerHTML = html;
+
+            // 【多选】批量操作栏显隐：仅在多选模式且有选中项时出现
+            const _mmBar = document.getElementById('mmMultiBar');
+            if (_mmBar) {
+                const _cnt = Object.keys(window.mmSelectedIds || {}).filter(k => window.mmSelectedIds[k]).length;
+                const _cntEl = document.getElementById('mmSelCount');
+                if (_cntEl) _cntEl.textContent = _cnt;
+                if (window.mmMultiMode && _cnt > 0) { _mmBar.classList.remove('hidden'); _mmBar.classList.add('flex'); }
+                else { _mmBar.classList.add('hidden'); _mmBar.classList.remove('flex'); }
+            }
+
             window.syncMethodsLists(); 
             window.initMmSortable(); 
+        };
+
+        // =================结算方式多选（批量删除 / 移动到分类）=================
+        window.mmMultiMode = window.mmMultiMode || false;
+        window.mmSelectedIds = window.mmSelectedIds || {};
+
+        // 切换多选模式
+        window.toggleMmMultiMode = function() {
+            window.mmMultiMode = !window.mmMultiMode;
+            window.mmSelectedIds = {};
+            const btn = document.getElementById('mmMultiBtn');
+            if (btn) {
+                const sp = btn.querySelector('span');
+                if (window.mmMultiMode) {
+                    if (btn.classList.contains('bg-[#9B79FF]')) btn.classList.replace('bg-[#9B79FF]', 'bg-[#F43F5E]');
+                    if (sp) sp.textContent = '退出多选';
+                } else {
+                    if (btn.classList.contains('bg-[#F43F5E]')) btn.classList.replace('bg-[#F43F5E]', 'bg-[#9B79FF]');
+                    if (sp) sp.textContent = '多选';
+                }
+            }
+            window.renderMethodManager();
+        };
+
+        // 勾选 / 取消勾选某个结算方式
+        window.toggleMmItemSelect = function(id) {
+            if (!window.mmSelectedIds) window.mmSelectedIds = {};
+            if (window.mmSelectedIds[id]) delete window.mmSelectedIds[id];
+            else window.mmSelectedIds[id] = true;
+            window.renderMethodManager();
+        };
+
+        // 批量删除（仅作用于当前 淘汰/胜利 页）
+        window.delSelectedMmItems = function() {
+            const ids = Object.keys(window.mmSelectedIds || {}).filter(k => window.mmSelectedIds[k]);
+            if (!ids.length) return;
+            if (!confirm('确定删除选中的 ' + ids.length + ' 个结算方式吗？')) return;
+            const data = window.v2App.currentMethodTab === 'lose' ? gameData.customMethods.lose : gameData.customMethods.win;
+            data.items = data.items.filter(i => !window.mmSelectedIds[i.id]);
+            window.mmSelectedIds = {};
+            saveData(); window.renderMethodManager();
+        };
+
+        // 打开移动弹窗（列出 淘汰/胜利 两栏的全部分类）
+        window.openMmMoveDialog = function() {
+            const ids = Object.keys(window.mmSelectedIds || {}).filter(k => window.mmSelectedIds[k]);
+            if (!ids.length) return alert('请先勾选要移动的结算方式');
+            const list = document.getElementById('mmMoveCatList');
+            if (!list) return;
+            const mk = (tabName, data) => data.categories.map(c =>
+                '<button class="w-full border-[1.5px] border-[#333333] py-1.5 font-black text-white text-[15px] tracking-widest active:scale-95 shadow-sm" style="background-color:' + c.color + ';" onclick="window.moveSelectedMmItems(\'' + tabName + '\', \'' + c.id + '\')">' + tabName + '｜' + (c.code || '?') + ' - ' + c.name + '</button>'
+            ).join('');
+            list.innerHTML = mk('淘汰', gameData.customMethods.lose) + mk('胜利', gameData.customMethods.win);
+            document.getElementById('mmMoveCatDialog').classList.remove('hidden');
+        };
+
+        // 执行移动（支持跨 淘汰/胜利 两栏）
+        window.moveSelectedMmItems = function(tabName, catId) {
+            const ids = Object.keys(window.mmSelectedIds || {}).filter(k => window.mmSelectedIds[k]);
+            if (!ids.length) return;
+            const src = window.v2App.currentMethodTab === 'lose' ? gameData.customMethods.lose : gameData.customMethods.win;
+            const dst = tabName === '淘汰' ? gameData.customMethods.lose : gameData.customMethods.win;
+            const dstCat = dst.categories.find(c => c.id === catId);
+            if (!dstCat) return alert('目标分类不存在，请重新选择');
+            const moving = src.items.filter(i => ids.indexOf(i.id) !== -1);
+            src.items = src.items.filter(i => ids.indexOf(i.id) === -1);
+            moving.forEach(i => {
+                i.categoryId = catId;
+                if (dstCat.code) i.name = dstCat.code + (i.num || '');
+                dst.items.push(i);
+            });
+            window.mmSelectedIds = {};
+            // 退出多选模式并复位按钮
+            window.mmMultiMode = false;
+            const btn = document.getElementById('mmMultiBtn');
+            if (btn) {
+                if (btn.classList.contains('bg-[#F43F5E]')) btn.classList.replace('bg-[#F43F5E]', 'bg-[#9B79FF]');
+                const sp = btn.querySelector('span');
+                if (sp) sp.textContent = '多选';
+            }
+            const dlg = document.getElementById('mmMoveCatDialog');
+            if (dlg) dlg.classList.add('hidden');
+            saveData(); window.renderMethodManager();
         };
 
         // --- 5. 安全事件绑定 (针对新UI，杜绝弹窗失效Bug) ---
@@ -13503,7 +14520,7 @@ window.renderMethodManager = function() {
             return colors[Math.floor(Math.random() * colors.length)];
         };
 
-        safeBind('mmToggleTabBtn', () => { window.v2App.currentMethodTab = window.v2App.currentMethodTab === 'lose' ? 'win' : 'lose'; window.renderMethodManager(); });
+        safeBind('mmToggleTabBtn', () => { window.v2App.currentMethodTab = window.v2App.currentMethodTab === 'lose' ? 'win' : 'lose'; window.mmSelectedIds = {}; window.renderMethodManager(); });
         
         safeBind('mmAddCategoryBtn', () => { 
             window.v2App.mmTargetId = null; 
@@ -13748,6 +14765,628 @@ window.renderMethodManager = function() {
 // 【图片库】结束
 // ============================================================
 
+// ============================================================
+// 【新增：后台管理 独立图片库（本地存储）】
+// 说明：这是一个全新的、独立存储的图片库 gameData.localImageLibrary，
+// 与“方法管理”使用的 gameData.imageLibrary 完全分离，互不影响。
+// 仅在【后台管理】页面展示，不出现在其他页面（如卡牌编辑）。
+// 由于 localImageLibrary 属于 gameData，【数据管理→导出Excel】会自动包含它。
+// ============================================================
+(function(){
+    // 【根因修复】此弹窗原本位于 #mainContainer（relative + z-10，自成层级上下文）内部，
+    // 而方式管理等弹窗挂在 <body> 下（z-99999）→ 内部 z 再大也赢不了外部。
+    // 启动时立刻把它挪到 <body> 直属，才能真正浮在所有弹窗之上。
+    try {
+        const _cipDlg = document.getElementById('cardImgPickerDialog');
+        if (_cipDlg && _cipDlg.parentElement && _cipDlg.parentElement !== document.body) {
+            document.body.appendChild(_cipDlg);
+        }
+    } catch (eMoveDlg) { console.warn('本地图库弹窗层级修复失败：', eMoveDlg); }
+
+    function getLib() { return gameData.localImageLibrary || (gameData.localImageLibrary = { items: [] }); }
+
+    // ---- 动态文件选择器（支持多选 + 移动端安全，规避小米等浏览器隐藏 input 选完不触发 change）----
+    function pickImages(onPicked) {
+        try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.style.position = 'fixed';
+            input.style.top = '0px'; input.style.left = '0px';
+            input.style.width = '1px'; input.style.height = '1px';
+            input.style.opacity = '0'; input.style.border = '0';
+            input.style.padding = '0'; input.style.margin = '0';
+            input.style.pointerEvents = 'none';
+            document.body.appendChild(input);
+            let handled = false;
+            const remove = function () { setTimeout(function () { try { if (input.parentNode) input.parentNode.removeChild(input); } catch (e) {} }, 0); };
+            input.addEventListener('change', function (e) {
+                const files = e.target.files ? Array.prototype.slice.call(e.target.files) : [];
+                if (files.length && !handled) { handled = true; remove(); try { onPicked(files); } catch (err) { console.error('pickImages 回调异常：', err); } }
+                else { remove(); }
+            });
+            try { input.click(); }
+            catch (err) { try { if (typeof input.showPicker === 'function') input.showPicker(); } catch (e2) { console.error('pickImages 唤起失败：', e2); } }
+            return true;
+        } catch (err) {
+            console.error('pickImages 失败：', err);
+            try { alert('当前浏览器无法唤起文件选择，请更换系统浏览器重试。'); } catch (e2) {}
+            return false;
+        }
+    }
+    window.pickImages = pickImages;
+
+    // ============================================================
+    // 【图片库持久化引擎】localStorage(主) + IndexedDB(大容量备用仓库)
+    // 目标：刷新页面 / 关闭浏览器 / 甚至 localStorage 被写满，图片都绝不丢失。
+    // ============================================================
+    const LIB_LS_KEY = 'unoLocalImageLibrary';
+    const LIB_DB_NAME = 'unoImgLibDB';
+    const LIB_DB_STORE = 'items';
+    const LIB_DB_VER = 1;
+    if (window.__libDirty === undefined) window.__libDirty = false;
+
+    let _libDbPromise = null;
+    function openLibDB() {
+        if (_libDbPromise) return _libDbPromise;
+        _libDbPromise = new Promise(function (resolve) {
+            try {
+                if (typeof indexedDB === 'undefined') { resolve(null); return; }
+                const req = indexedDB.open(LIB_DB_NAME, LIB_DB_VER);
+                req.onupgradeneeded = function () {
+                    try {
+                        const db = req.result;
+                        if (!db.objectStoreNames.contains(LIB_DB_STORE)) db.createObjectStore(LIB_DB_STORE, { keyPath: 'id' });
+                    } catch (e) {}
+                };
+                req.onsuccess = function () { resolve(req.result); };
+                req.onerror = function () { resolve(null); };
+                req.onblocked = function () { resolve(null); };
+            } catch (e) { resolve(null); }
+        });
+        return _libDbPromise;
+    }
+    function libIdbPut(items) {
+        return openLibDB().then(function (db) {
+            if (!db) return false;
+            return new Promise(function (resolve) {
+                try {
+                    const tx = db.transaction(LIB_DB_STORE, 'readwrite');
+                    const store = tx.objectStore(LIB_DB_STORE);
+                    try { store.clear(); } catch (e) {}
+                    (items || []).forEach(function (it) {
+                        if (!it || !it.url) return;
+                        try { store.put({ id: it.id, name: it.name || '图片', url: it.url }); } catch (e) {}
+                    });
+                    tx.oncomplete = function () { resolve(true); };
+                    tx.onerror = function () { resolve(false); };
+                    tx.onabort = function () { resolve(false); };
+                } catch (e) { resolve(false); }
+            });
+        }).catch(function () { return false; });
+    }
+    function libIdbGet() {
+        return openLibDB().then(function (db) {
+            if (!db) return [];
+            return new Promise(function (resolve) {
+                try {
+                    const tx = db.transaction(LIB_DB_STORE, 'readonly');
+                    const req = tx.objectStore(LIB_DB_STORE).getAll();
+                    req.onsuccess = function () { resolve(req.result || []); };
+                    req.onerror = function () { resolve([]); };
+                } catch (e) { resolve([]); }
+            });
+        }).catch(function () { return []; });
+    }
+    // 并集合并：内存 / localStorage / IndexedDB 只要有，就不会被覆盖丢失
+    function mergeLibItems(a, b) {
+        const out = [], seen = {};
+        [].concat(a || [], b || []).forEach(function (it) {
+            if (!it || !it.url) return;
+            const key = String(it.id || it.url);
+            if (seen[key]) return;
+            seen[key] = true;
+            out.push({
+                id: it.id || ('lib_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+                name: it.name || '图片',
+                url: it.url
+            });
+        });
+        return out;
+    }
+    window.__mergeLibItems = mergeLibItems;
+
+    // 保存：localStorage 写入 + IndexedDB 镜像；任一失败都不丢图
+    function persistLib(done) {
+        const lib = getLib();
+        const items = (lib && lib.items) ? lib.items : [];
+        window.__libDirty = true;
+        let lsOk = true;
+        try { localStorage.setItem(LIB_LS_KEY, JSON.stringify({ items: items })); }
+        catch (e) { lsOk = false; }
+        try { saveData(); } catch (e) {}
+        window.__libDirty = false;
+        try {
+            libIdbPut(items).then(function (ok) { if (typeof done === 'function') done(lsOk || !!ok, lsOk, !!ok); });
+        } catch (e) { if (typeof done === 'function') done(lsOk, lsOk, false); }
+        return lsOk;
+    }
+    window.__persistImageLibrary = persistLib;
+
+    // 读取还原：三源并集 → 回写 → 重绘，保证刷新后 100% 还原
+    function hydrateLib(done) {
+        let mem = [];
+        try { mem = (gameData.localImageLibrary && gameData.localImageLibrary.items) ? gameData.localImageLibrary.items : []; } catch (e) {}
+        let lsItems = [];
+        try {
+            const raw = localStorage.getItem(LIB_LS_KEY);
+            const p = raw ? JSON.parse(raw) : null;
+            if (p && Array.isArray(p.items)) lsItems = p.items;
+            else if (Array.isArray(p)) lsItems = p;
+        } catch (e) {}
+        const finish = function (idbItems) {
+            const merged = mergeLibItems(mergeLibItems(mem, lsItems), idbItems || []);
+            gameData.localImageLibrary = { items: merged };
+            try { localStorage.setItem(LIB_LS_KEY, JSON.stringify({ items: merged })); } catch (e) {}
+            try { renderImageLibrary(); } catch (e) {}
+            if (typeof done === 'function') done(merged.length);
+        };
+        try { libIdbGet().then(finish); }
+        catch (e) { finish([]); }
+    }
+    window.__hydrateImageLibrary = hydrateLib;
+    window.renderImageLibrary = renderImageLibrary;
+    window.getImageLibraryItems = function () { try { return getLib().items || []; } catch (e) { return []; } };
+
+    // ---- 把本地图片文件压缩后转成 base64（限制最大边；PNG/WebP/GIF 自动保留透明通道）----
+    function fileToResizedDataURL(file, maxDim, quality, cb) {
+        try {
+            const mime = (file && file.type) ? String(file.type).toLowerCase() : '';
+            const fname = (file && file.name) ? String(file.name).toLowerCase() : '';
+            // PNG / WebP / GIF 一律保留 alpha 通道（异形透明 LOGO 全靠它）
+            const keepAlpha = mime.indexOf('png') >= 0 || mime.indexOf('webp') >= 0 ||
+                              mime.indexOf('gif') >= 0 || /\.png$/.test(fname);
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                const img = new Image();
+                img.onload = function () {
+                    try {
+                        let w = img.width, h = img.height;
+                        const scale = Math.min(1, maxDim / Math.max(w, h));
+                        w = Math.max(1, Math.round(w * scale));
+                        h = Math.max(1, Math.round(h * scale));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.clearRect(0, 0, w, h);   // 关键：透明底，避免 JPEG 黑底污染
+                        ctx.drawImage(img, 0, 0, w, h);
+                        let out = null;
+                        if (keepAlpha) {
+                            try { out = canvas.toDataURL('image/png'); } catch (e) { out = null; }
+                        } else {
+                            try { out = canvas.toDataURL('image/jpeg', quality); } catch (e) { out = null; }
+                            if (!out) { try { out = canvas.toDataURL('image/png'); } catch (e2) { out = null; } }
+                        }
+                        cb(out);
+                    } catch (e) { cb(null); }
+                };
+                img.onerror = function () { cb(null); };
+                img.src = ev.target.result;
+            };
+            reader.onerror = function () { cb(null); };
+            reader.readAsDataURL(file);
+        } catch (err) { cb(null); }
+    }
+    // 对外暴露：模块 LOGO 上传等场景复用同一套压缩/透明通道逻辑
+    window.__fileToResizedDataURL = function (file, maxDim, quality, cb) { fileToResizedDataURL(file, maxDim, quality, cb); };
+
+    // ---- 图片库：批量模式 / 搜索状态（仅作用于后台管理本地图片库）----
+    let libBatchMode = false;
+    let libSelectedIds = {};
+    let libKeyword = '';
+
+    function getVisibleItems(lib) {
+        const kw = (libKeyword || '').trim().toLowerCase();
+        if (!kw) return lib.items;
+        return lib.items.filter(it => ((it.name || '').toLowerCase().indexOf(kw) !== -1));
+    }
+
+    function getSelectedLibIds() {
+        return Object.keys(libSelectedIds).filter(k => libSelectedIds[k]);
+    }
+
+    function updateLibBatchBar() {
+        const bar = document.getElementById('imgLibBatchBar');
+        const cntEl = document.getElementById('imgLibSelCount');
+        const n = getSelectedLibIds().length;
+        if (cntEl) { cntEl.textContent = '已选 ' + n; cntEl.classList.toggle('hidden', !libBatchMode); }
+        if (bar) { bar.classList.toggle('hidden', !libBatchMode); bar.classList.toggle('flex', libBatchMode); }
+    }
+
+    // ---- 图片归类：与「卡牌信息」共用同一套分类 ----
+    function libCatList() {
+        try { return (gameData.cardSystem && gameData.cardSystem.categories) ? gameData.cardSystem.categories : []; } catch (e) { return []; }
+    }
+    function libCatOptions(sel) {
+        let html = '<option value="">未分类</option>';
+        libCatList().forEach(function (c) {
+            html += '<option value="' + c.id + '"' + (String(sel || '') === c.id ? ' selected' : '') + '>' + String(c.name || '').replace(/</g, '&lt;') + '</option>';
+        });
+        if (sel && !libCatList().some(function (c) { return c.id === sel; })) {
+            html += '<option value="' + sel + '" selected>（分类已删除）</option>';
+        }
+        return html;
+    }
+    window.setLibImageCat = function (id, catId) {
+        const lib = getLib();
+        const it = lib.items.find(x => x.id === id);
+        if (!it) return;
+        it.catId = catId || '';
+        persistLib();
+        renderImageLibrary();
+    };
+
+    // ---- 渲染“后台管理 → 图片库”网格 ----
+    function renderImageLibrary() {
+        const lib = getLib();
+        const grid = document.getElementById('imgLibGrid');
+        const cnt = document.getElementById('imgLibCount');
+        if (!grid) return;
+        const visible = getVisibleItems(lib);
+        const cntInline = document.getElementById('imgLibCountInline');
+        const cntTxt = '（共 ' + lib.items.length + ' 张' + (visible.length !== lib.items.length ? '，筛出 ' + visible.length + ' 张' : '') + '）';
+        if (cnt) cnt.textContent = cntTxt;
+        if (cntInline) cntInline.textContent = '（共 ' + lib.items.length + ' 张）';
+        if (visible.length === 0) {
+            grid.innerHTML = '<div class="col-span-3 sm:col-span-4 md:col-span-6 text-center text-gray-400 text-[12px] py-6">' + (lib.items.length ? '没有符合搜索的图片' : '暂无图片，点击右上角“上传图片”添加') + '</div>';
+            updateLibBatchBar();
+            return;
+        }
+        grid.innerHTML = visible.map(it => `
+            <div class="relative border-2 ${libSelectedIds[it.id] ? 'border-[#4ADE80]' : 'border-[#5E4B8B]'} rounded-lg overflow-hidden bg-white flex flex-col">
+                ${libBatchMode ? `<button onclick="event.stopPropagation(); window.toggleLibSelect('${it.id}')" class="absolute top-1 left-1 w-[16px] h-[16px] rounded-full border border-[#333333] flex items-center justify-center z-10 ${libSelectedIds[it.id] ? 'bg-[#4ADE80]' : 'bg-white'}"><i class="fa-solid fa-check text-[8px] text-white"></i></button>` : ''}
+                <button onclick="window.delLibImage('${it.id}')" class="absolute top-1 right-1 bg-[#D84C53] text-white text-[9px] font-black leading-none rounded px-1 py-0.5 border border-white shadow z-10">删</button>
+                <div class="w-full bg-[#111] overflow-hidden" style="aspect-ratio:1/1;">
+                    <img src="${it.url}" class="w-full h-full object-contain ${libBatchMode ? 'cursor-pointer' : ''}" ${libBatchMode ? `onclick="window.toggleLibSelect('${it.id}')"` : ''} onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect width=%22100%%22 height=%22100%%22 fill=%22%23f3f4f6%22/><text x=%2250%%22 y=%2250%%22 fill=%22%239ca3af%22 font-size=%2216%22 text-anchor=%22middle%22 dy=%22.3em%22>失效</text></svg>'">
+                </div>
+                <input value="${(it.name || '').replace(/"/g, '&quot;')}" oninput="window.renameLibImage('${it.id}', this.value)" class="text-[10px] border-t-2 border-[#5E4B8B] px-1 py-0.5 text-[#5E4B8B] bg-white focus:outline-none w-full" placeholder="名称">
+                <select onchange="window.setLibImageCat('${it.id}', this.value)" class="text-[10px] border-t-2 border-[#5E4B8B] px-0.5 py-0.5 text-[#5E4B8B] bg-white focus:outline-none w-full leading-tight">${libCatOptions(it.catId)}</select>
+            </div>
+        `).join('');
+        updateLibBatchBar();
+    }
+
+    // ===================== 图片库批量管理 =====================
+    window.toggleLibBatchMode = function () {
+        libBatchMode = !libBatchMode;
+        libSelectedIds = {};
+        const btn = document.getElementById('imgLibBatchBtn');
+        if (btn) {
+            btn.innerHTML = libBatchMode ? '<i class="fa-solid fa-xmark mr-1"></i>退出批量' : '<i class="fa-solid fa-list-check mr-1"></i>批量管理';
+            if (libBatchMode) { btn.classList.remove('bg-[#6D82EE]'); btn.classList.add('bg-[#F43F5E]'); }
+            else { btn.classList.remove('bg-[#F43F5E]'); btn.classList.add('bg-[#6D82EE]'); }
+        }
+        renderImageLibrary();
+    };
+
+    window.toggleLibSelect = function (id) {
+        if (libSelectedIds[id]) delete libSelectedIds[id];
+        else libSelectedIds[id] = true;
+        renderImageLibrary();
+    };
+
+    window.libSelectAll = function () {
+        getVisibleItems(getLib()).forEach(it => { libSelectedIds[it.id] = true; });
+        renderImageLibrary();
+    };
+
+    window.libInvertSelect = function () {
+        getVisibleItems(getLib()).forEach(it => {
+            if (libSelectedIds[it.id]) delete libSelectedIds[it.id];
+            else libSelectedIds[it.id] = true;
+        });
+        renderImageLibrary();
+    };
+
+    window.libClearSelect = function () {
+        libSelectedIds = {};
+        renderImageLibrary();
+    };
+
+    window.delSelectedLibImages = function () {
+        const ids = getSelectedLibIds();
+        if (!ids.length) return alert('请先勾选要删除的图片');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 张图片吗？')) return;
+        const lib = getLib();
+        lib.items = lib.items.filter(x => !libSelectedIds[x.id]);
+        libSelectedIds = {};
+        persistLib();
+        renderImageLibrary();
+    };
+
+    window.delLibImage = function (id) {
+        const lib = getLib();
+        const it = lib.items.find(x => x.id === id);
+        if (it && !confirm('确定删除图片「' + (it.name || '未命名') + '」？')) return;
+        lib.items = lib.items.filter(x => x.id !== id);
+        persistLib();
+        renderImageLibrary();
+    };
+    window.renameLibImage = function (id, val) {
+        const lib = getLib();
+        const it = lib.items.find(x => x.id === id);
+        if (it) {
+            it.name = val;
+            window.__libDirty = true;
+            clearTimeout(window.__libRenameTimer);
+            window.__libRenameTimer = setTimeout(function () { try { persistLib(); } catch (e) {} }, 400);
+        }
+    };
+
+    // ---- 上传图片（压缩后入库）----
+    function uploadImages(files) {
+        const lib = getLib();
+        let pending = files.length;
+        if (pending === 0) return;
+        files.forEach(file => {
+            const baseName = (file.name || '图片').replace(/\.[^.]+$/, '');
+            fileToResizedDataURL(file, 800, 0.82, function (dataUrl) {
+                if (dataUrl) {
+                    lib.items.push({ id: 'lib_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name: baseName, url: dataUrl });
+                }
+                pending--;
+                if (pending === 0) {
+                    persistLib(function (ok) { if (!ok) { try { alert('提示：图片已转存「大容量备用仓库」尽力保存；建议删减图片或先「导出JSON」备份。'); } catch (e) {} } });
+                    renderImageLibrary();
+                }
+            });
+        });
+    }
+
+    // ---- 导出图片库 JSON ----
+    function exportImageLibraryJSON() {
+        const lib = getLib();
+        const data = { type: 'uno-image-library', version: 1, items: lib.items };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const now = new Date();
+        const fn = 'UNO图片库-' + String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '.json';
+        if (window.downloadBlob) window.downloadBlob(blob, fn);
+    }
+
+    // ---- 导入图片库 JSON（覆盖整库）----
+    function importImageLibraryJSON(file) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+            try {
+                const parsed = JSON.parse(evt.target.result);
+                let items = parsed && parsed.items ? parsed.items : (Array.isArray(parsed) ? parsed : null);
+                if (!Array.isArray(items)) throw new Error('文件格式不正确（缺少 items 数组）');
+                const clean = items.filter(it => it && it.url).map(it => ({
+                    id: it.id || ('lib_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+                    name: it.name || '图片',
+                    url: it.url
+                }));
+                if (!confirm('导入将覆盖当前图片库的全部 ' + getLib().items.length + ' 张图片，确定继续？（共将导入 ' + clean.length + ' 张）')) return;
+                gameData.localImageLibrary.items = clean;
+                persistLib();
+                renderImageLibrary();
+                alert('图片库导入成功，共 ' + clean.length + ' 张');
+            } catch (err) {
+                alert('导入失败：' + (err && err.message ? err.message : err));
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // ===================== 绑定按钮（仅后台管理图片库） =====================
+    const uploadBtn = document.getElementById('imgLibUploadBtn');
+    if (uploadBtn) uploadBtn.onclick = function () { window.pickImages(uploadImages); };
+    const exportBtn = document.getElementById('imgLibExportBtn');
+    if (exportBtn) exportBtn.onclick = exportImageLibraryJSON;
+    const importBtn = document.getElementById('imgLibImportBtn');
+    if (importBtn) importBtn.onclick = function () { if (window.pickFile) window.pickFile('.json,application/json', importImageLibraryJSON); };
+    // 批量管理开关
+    const batchBtn = document.getElementById('imgLibBatchBtn');
+    if (batchBtn) batchBtn.onclick = function () { if (window.toggleLibBatchMode) window.toggleLibBatchMode(); };
+    // 名称搜索（输入即时筛选，输入框在网格外不会被重渲染）
+    const searchInput = document.getElementById('imgLibSearchInput');
+    if (searchInput) searchInput.oninput = function () {
+        if (window.setLibKeyword) window.setLibKeyword(this.value || '');
+    };
+    window.setLibKeyword = function (kw) { libKeyword = kw || ''; renderImageLibrary(); };
+
+    // 首次渲染（若此时 DOM 已就绪）
+    renderImageLibrary();
+
+    // ===================== 图片库「默认折叠」=====================
+    (function () {
+        let collapsed = true;
+        try { collapsed = localStorage.getItem('imgLibCollapsed') !== '0'; } catch (e) {}
+        const apply = function () {
+            const body = document.getElementById('imgLibBody');
+            const icon = document.getElementById('imgLibToggleIcon');
+            if (body) { body.classList.toggle('hidden', collapsed); body.classList.toggle('block', !collapsed); }
+            if (icon) {
+                icon.className = collapsed ? 'fa-solid fa-chevron-down text-[11px]' : 'fa-solid fa-chevron-up text-[11px]';
+            }
+            try { localStorage.setItem('imgLibCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+        };
+        window.toggleImageLibraryBody = function () { collapsed = !collapsed; apply(); };
+        const tg = document.getElementById('imgLibToggleBtn');
+        if (tg) tg.onclick = function () { window.toggleImageLibraryBody(); };
+        apply();
+    })();
+
+    // ===================== 卡牌图片选择器（从本地图片库选择） =====================
+    // 供「卡牌编辑」与「方式管理 → 本地图库」共用；支持按卡牌信息分类筛选 + 自定义一行显示张数
+    try {
+        const _c = parseInt(localStorage.getItem('cipCols'));
+        window.__cipCols = (!isNaN(_c) && _c >= 1) ? Math.min(12, _c) : 6;
+    } catch (e) { window.__cipCols = 6; }
+    try { window.__cipCat = localStorage.getItem('cipCat') || '__all__'; } catch (e) { window.__cipCat = '__all__'; }
+
+    function cipCatList() {
+        try { return (gameData.cardSystem && gameData.cardSystem.categories) ? gameData.cardSystem.categories : []; } catch (e) { return []; }
+    }
+    function cipCols() {
+        let n = parseInt(window.__cipCols);
+        if (!n || n < 1) n = 6;
+        return Math.max(1, Math.min(12, n));
+    }
+    function renderCipCatSelect() {
+        const sel = document.getElementById('cipCatSelect');
+        if (!sel) return;
+        const cats = cipCatList();
+        let html = '<option value="__all__">全部</option><option value="">未分类</option>';
+        cats.forEach(function (c) {
+            html += '<option value="' + c.id + '">' + String(c.name || '').replace(/</g, '&lt;') + '</option>';
+        });
+        if (window.__cipCat !== '__all__' && window.__cipCat !== '' && !cats.some(function (c) { return c.id === window.__cipCat; })) {
+            html += '<option value="' + window.__cipCat + '">（已删除的分类）</option>';
+        }
+        sel.innerHTML = html;
+        sel.value = window.__cipCat;
+    }
+    function renderCipGrid() {
+        const lib = getLib();
+        const grid = document.getElementById('cipGrid');
+        if (!grid) return;
+        const cols = cipCols();
+        grid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+        const colInp = document.getElementById('cipColsInput');
+        if (colInp && document.activeElement !== colInp) colInp.value = cols;
+        renderCipCatSelect();
+
+        const cat = window.__cipCat;
+        let items = (lib.items || []).slice();
+        if (cat !== '__all__') items = items.filter(function (x) { return (x.catId || '') === cat; });
+
+        if (items.length === 0) {
+            grid.innerHTML = '<div style="grid-column:1/-1" class="text-center text-gray-400 text-[12px] py-6">' +
+                ((lib.items || []).length ? '该分类下暂无图片' : '图片库为空<br>请先在“后台管理 → 图片库”上传') + '</div>';
+            return;
+        }
+        const cell = function (it, idx) {
+            return '<div class="relative border-2 border-[#5E4B8B] rounded-lg overflow-hidden bg-black flex items-center justify-center cursor-pointer hover:brightness-110 transition-all" data-url="' +
+                String(it.url).replace(/"/g, '&quot;') + '" style="aspect-ratio:1/1;">' +
+                '<img src="' + it.url + '" class="w-full h-full object-contain bg-[#111]" onerror="this.style.opacity=0.25">' +
+                '<div class="absolute bottom-0 left-0 right-0 bg-black/75 text-white text-[10px] truncate px-1 py-0.5 leading-tight text-center">' +
+                String(it.name || ('图' + (idx + 1))).replace(/</g, '&lt;') + '</div></div>';
+        };
+        let html = '';
+        if (cat === '__all__') {
+            // 【按卡牌信息的分类方式分类放置】
+            const cats = cipCatList();
+            const groups = [{ id: '', name: '未分类' }].concat(cats.map(function (c) { return { id: c.id, name: c.name }; }));
+            const usedIds = {};
+            groups.forEach(function (g) {
+                const arr = items.filter(function (x) { return (x.catId || '') === g.id; });
+                if (!arr.length) return;
+                usedIds[g.id] = true;
+                html += '<div style="grid-column:1/-1" class="text-[11px] font-black text-[#5E4B8B] bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 mt-1 text-left">' +
+                    String(g.name).replace(/</g, '&lt;') + '（' + arr.length + '）</div>';
+                html += arr.map(function (it) { return cell(it, items.indexOf(it) + 1); }).join('');
+            });
+            const rest = items.filter(function (x) { return !usedIds[x.catId || '']; });
+            if (rest.length) {
+                html += '<div style="grid-column:1/-1" class="text-[11px] font-black text-[#5E4B8B] bg-[#FDE68A] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 mt-1 text-left">其他（分类已变更）</div>';
+                html += rest.map(function (it) { return cell(it, items.indexOf(it) + 1); }).join('');
+            }
+        } else {
+            html = items.map(function (it, i) { return cell(it, i + 1); }).join('');
+        }
+        grid.innerHTML = html;
+        grid.querySelectorAll('[data-url]').forEach(el => {
+            el.onclick = function () {
+                const url = el.getAttribute('data-url');
+                if (window._cipOnPick) window._cipOnPick(url);
+                const dlg = document.getElementById('cardImgPickerDialog');
+                if (dlg) dlg.classList.add('hidden');
+            };
+        });
+    }
+    window.renderCipGrid = renderCipGrid;
+
+    // 分类下拉 / 一行张数 事件
+    try {
+        const cipCat = document.getElementById('cipCatSelect');
+        if (cipCat) cipCat.onchange = function () {
+            window.__cipCat = this.value || '__all__';
+            try { localStorage.setItem('cipCat', window.__cipCat); } catch (e) {}
+            renderCipGrid();
+        };
+        const cipCols = document.getElementById('cipColsInput');
+        if (cipCols) cipCols.onchange = function () {
+            let n = parseInt(this.value);
+            if (isNaN(n) || n < 1) n = 6;
+            n = Math.max(1, Math.min(12, n));
+            window.__cipCols = n;
+            this.value = n;
+            try { localStorage.setItem('cipCols', String(n)); } catch (e) {}
+            renderCipGrid();
+        };
+    } catch (eBind) {}
+
+    window.openCardImgPicker = function (onPick) {
+        window._cipOnPick = onPick;
+        renderCipGrid();
+        const dlg = document.getElementById('cardImgPickerDialog');
+        if (dlg) {
+            // 双保险：确保挂在 body 直属 + 行内最高层级，任何弹窗都盖不住它
+            try { if (dlg.parentElement !== document.body) document.body.appendChild(dlg); } catch (eMove) {}
+            try { dlg.style.zIndex = '2147483000'; } catch (eZ) {}
+            dlg.classList.remove('hidden');
+        }
+    };
+    window.closeCardImgPicker = function () {
+        const dlg = document.getElementById('cardImgPickerDialog');
+        if (dlg) dlg.classList.add('hidden');
+    };
+    window.setCimUrl = function (url) {
+        const inp = document.getElementById('cimUrlInput');
+        if (inp) inp.value = url || '';
+        const prev = document.getElementById('cimUrlPreview');
+        if (prev) { if (url) { prev.src = url; prev.style.visibility = 'visible'; } else { prev.src = ''; prev.style.visibility = 'hidden'; } }
+    };
+    window.pickCardLocalImage = function () {
+        pickImages(function (files) {
+            if (!files || !files.length) return;
+            fileToResizedDataURL(files[0], 800, 0.82, function (dataUrl) {
+                if (!dataUrl) { alert('图片读取失败，请重试'); return; }
+                // 同步存入后台管理图片库，保证刷新后这张图依然在库里
+                try {
+                    const lib = getLib();
+                    const baseName = (files[0].name || '图片').replace(/\.[^.]+$/, '');
+                    lib.items.push({ id: 'lib_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name: baseName, url: dataUrl });
+                    persistLib();
+                } catch (e) {}
+                window.setCimUrl(dataUrl);
+                try { renderImageLibrary(); } catch (e) {}
+            });
+        });
+    };
+
+    // 绑定卡牌图片选择器弹窗按钮
+    const cipClose = document.getElementById('cipCloseBtn');
+    if (cipClose) cipClose.onclick = window.closeCardImgPicker;
+    const cipUpload = document.getElementById('cipUploadBtn');
+    if (cipUpload) cipUpload.onclick = function () { window.pickCardLocalImage(); };
+
+    // 【刷新绝不丢图】启动后立刻从 localStorage + IndexedDB 三源合并还原图片库
+    setTimeout(function () { try { hydrateLib(); } catch (e) { console.error('图片库还原失败：', e); } }, 0);
+    // 切后台 / 关页面前再兜底写一次
+    try {
+        window.addEventListener('pagehide', function () { try { persistLib(); } catch (e) {} });
+        document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { try { persistLib(); } catch (e) {} } });
+        window.addEventListener('beforeunload', function () { try { persistLib(); } catch (e) {} });
+    } catch (e) {}
+})();
+// ============================================================
+// 【新增图片库 / 卡牌选择器】结束
+// ============================================================
+
 window.openMmItemDialog = function(itemId = null, prefillCatId = null) {
             window.v2App.mmTargetId = itemId;
             const data = window.v2App.currentMethodTab === 'lose' ? gameData.customMethods.lose : gameData.customMethods.win;
@@ -13813,6 +15452,24 @@ window.openMmItemDialog = function(itemId = null, prefillCatId = null) {
                 };
             }
             document.getElementById('mmItemDialog').classList.remove('hidden');
+
+            // 【本地图片库】每次打开弹窗时重新绑定（与旧图片库互不影响）
+            const localPickBtn = document.getElementById('mmSelectFromLocalLibBtn');
+            if (localPickBtn) {
+                localPickBtn.onclick = null;
+                localPickBtn.onclick = function() {
+                    if (!window.openCardImgPicker) return alert('本地图片库加载中，请稍后再试');
+                    window.openCardImgPicker(function(url) {
+                        if (!url) return;
+                        const input = document.getElementById('mmItemUrlInput');
+                        if (input) input.value = url;
+                        const pv = document.getElementById('mmItemUrlPreview');
+                        if (pv) pv.innerHTML = '<img src="' + url + '" class="h-[60px] object-contain border-[1.5px] border-[#333333] bg-black" crossorigin="anonymous" onerror="this.style.display=\'none\'">';
+                        const lbl = document.getElementById('mmSelectFromLibraryLabel');
+                        if (lbl) lbl.textContent = '已选图 ✔';
+                    });
+                };
+            }
         };
 
         safeBind('mmAddItemBtn', () => window.openMmItemDialog());
