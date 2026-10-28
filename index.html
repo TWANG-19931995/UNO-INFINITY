@@ -6526,6 +6526,7 @@ function renderPlayerManager() {
             <div class="flex items-center gap-2 w-full border-t border-dashed border-[#5E4B8B]/20 pt-2">
                 <span class="text-xs font-bold text-[#5E4B8B] shrink-0">头像链接:</span>
                 <input type="text" class="player-avatar-input bg-[#F1F5F9] border border-[#5E4B8B]/40 rounded-lg flex-1 text-xs px-2 py-1 outline-none focus:border-[#5E4B8B]" data-id="${p.id}" value="${p.avatar}" placeholder="请输入图片URL地址">
+                <button type="button" class="player-avatar-upload-btn shrink-0 px-2 py-1 text-[11px] font-black rounded-lg border-2 border-[#5E4B8B] bg-[#FBBF24] text-[#5E4B8B] active:translate-y-[1px] shadow-sm" data-id="${p.id}">📷上传</button>
             </div>
         </div>
     `).join('');
@@ -10599,7 +10600,65 @@ els.playerList.addEventListener('input', e => {
                 }
             });
 
+            // ===== 本地头像上传（支持 PNG 透明通道，压缩后 dataURL 存进 p.avatar，随工程文件导出导入）=====
+            let _avatarUploadInput = null;
+            let _avatarTargetId = null;
+            function getAvatarUploadInput(){
+                if(!_avatarUploadInput){
+                    _avatarUploadInput = document.createElement('input');
+                    _avatarUploadInput.type = 'file';
+                    _avatarUploadInput.accept = 'image/*';
+                    _avatarUploadInput.style.display = 'none';
+                    _avatarUploadInput.addEventListener('change', onAvatarFileChosen);
+                    document.body.appendChild(_avatarUploadInput);
+                }
+                return _avatarUploadInput;
+            }
+            window.openAvatarUpload = function(pid){
+                _avatarTargetId = pid;
+                try { getAvatarUploadInput().click(); } catch(e){}
+            };
+            function onAvatarFileChosen(e){
+                const file = e.target.files && e.target.files[0];
+                const pid = _avatarTargetId;
+                if(!file || pid === null || pid === undefined){
+                    if(e && e.target) e.target.value = '';
+                    return;
+                }
+                const p = gameData.players.find(x => x.id === pid);
+                if(!p){
+                    if(e && e.target) e.target.value = '';
+                    return;
+                }
+                const applyOut = function(out){
+                    if(!out) return;
+                    p.avatar = out;
+                    // 同步卡片里的链接输入框 + 预览小图
+                    const input = document.querySelector('.player-avatar-input[data-id="'+pid+'"]');
+                    if(input){
+                        input.value = out;
+                        const card = input.closest('.v2-player-manager-card');
+                        if(card){ const img = card.querySelector('img'); if(img) img.src = out; }
+                    }
+                    saveData();
+                    updateAllUI();
+                };
+                if(window.__fileToResizedDataURL){
+                    window.__fileToResizedDataURL(file, 256, 0.92, applyOut);
+                } else {
+                    const r = new FileReader();
+                    r.onload = function(){ applyOut(r.result); };
+                    r.readAsDataURL(file);
+                }
+                if(e && e.target) e.target.value = '';
+            }
+
             els.playerList.addEventListener('click', e => {
+                const upBtn = e.target.closest('.player-avatar-upload-btn');
+                if (upBtn) {
+                    if (window.openAvatarUpload) window.openAvatarUpload(parseInt(upBtn.dataset.id));
+                    return;
+                }
                 const toggle = e.target.closest('.toggle-active');
                 if (toggle) {
                     const id = parseInt(toggle.dataset.id);
@@ -18637,7 +18696,12 @@ if (payload.eliminatedStr) {
     inp.addEventListener('input', function(){
       if(inp.dataset.armed === '1'){ clearTimeout(inp._armT); inp._armT = setTimeout(function(){ inp.dataset.armed='0'; }, 3000); }
     });
-    inp.addEventListener('click', function(){ armSlider(inp); });
+    // 【修复】原解锁逻辑绑在 click 上：拖动是「按下→移动→松开」一次连续手势，浏览器往往不触发 click，
+    // 导致滑块永远停在「未解锁」状态、每次 input 都被回退 = 完全锁死。改为按下即解锁，
+    // 拖动手势在移动前已经解锁，立即生效。press 后再松手也不会误触（已解锁才提交数值）。
+    inp.addEventListener('pointerdown', function(){ armSlider(inp); });
+    inp.addEventListener('touchstart', function(){ armSlider(inp); }, { passive: true });
+    inp.addEventListener('focus', function(){ armSlider(inp); });
   }
   function armSlider(inp){
     document.querySelectorAll('input[type=range].arm-slider').forEach(function(s){
