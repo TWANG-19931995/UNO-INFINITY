@@ -557,6 +557,14 @@
                     <div id="ssCapsulePanel" class="hidden absolute right-0 top-12 bg-white/80 border-[4px] border-[#5E4B8B] p-4 rounded-2xl w-[300px] shadow-xl z-50 max-h-[80vh] overflow-y-auto custom-scroll text-left"></div>
                 </div>
 
+                <!-- 【新增】收益榜样式设置按钮 (仅收益榜模块显示，位于全局背景风格按钮左侧) -->
+                <div id="earnSettingsWrap" class="relative hidden">
+                    <button id="earnSettingsBtn" class="w-8 h-8 sm:w-10 sm:h-10 bg-[#F59E0B] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full flex items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110" onclick="window.toggleEarnSettings()" title="收益榜样式设置">
+                        <i class="fa-solid fa-sack-dollar text-white text-xs sm:text-base"></i>
+                    </button>
+                    <div id="earnSettingsPanel" class="hidden absolute right-0 top-12 bg-white/80 border-[4px] border-[#5E4B8B] p-4 rounded-2xl w-[300px] shadow-xl z-50 max-h-[80vh] overflow-y-auto custom-scroll text-left"></div>
+                </div>
+
                 <div class="relative">
                     <button id="bgSwitcherBtn" class="w-8 h-8 sm:w-10 sm:h-10 bg-[#F87171] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full flex items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110">
                         <i class="fa-solid fa-gear text-white text-xs sm:text-base"></i>
@@ -1074,6 +1082,17 @@
             <!-- 动态内容渲染容器 (每位玩家一张独立底色卡片，纵向无限延伸) -->
             <div id="ovoContent" class="w-full relative transition-all flex flex-col items-center">
             </div>
+        </section>
+
+        <!-- 【新增模块】收益榜 (主视图：玩家收益条 / 编辑图：场次输赢录入) -->
+        <section id="earningsSection" class="kawaii-card p-2 sm:p-4 mb-6 relative" style="order: 0;">
+            <!-- 标题 LOGO：悬浮于顶部，由「设置」里的标题 LOGO 上传；renderModuleLogo 控制显隐与位置 -->
+            <div id="earnTitleWrap" class="flex items-center justify-center mb-3 hidden">
+                <div id="earnLogoSlot" class="w-full flex items-center justify-center"></div>
+            </div>
+
+            <!-- 动态内容渲染容器：卡片紧贴顶部留白(S.topGap)，中间无多余内容，方便放置 LOGO -->
+            <div id="earnContent" class="w-full relative transition-all flex flex-col items-center"></div>
         </section>
 
 
@@ -3213,6 +3232,7 @@ const modulesConfig =[
             { id: 'latestStatusSection', name: '最新战况', icon: 'fa-tv' }, // <--- 这是新加的这一行
 { id: 'cloudShareSection', name: '云端同步与分享', icon: 'fa-cloud' },
 { id: 'oneVsOneSection', name: '1V1-擂台区', icon: 'fa-khanda' },
+{ id: 'earningsSection', name: '收益榜', icon: 'fa-sack-dollar' },
             { id: 'methodManagerSection', name: '淘汰条目管理区', icon: 'fa-clone' }, // 【图1复刻新增】
             { id: 'penaltyStatsSection', name: '罚牌详细统计区', icon: 'fa-clone' }, // 【图1复刻新增】
 { id: 'penaltySection', name: '罚牌记录区', icon: 'fa-clone' }, // <--- 这是你刚加的
@@ -6597,6 +6617,7 @@ function updateAllUI() {
             if(typeof renderMethodStatsTable === 'function') renderMethodStatsTable(); 
             if(typeof renderEliminationOrder === 'function') renderEliminationOrder(); 
             if(typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena();
+            if(typeof window.renderEarnings === 'function') window.renderEarnings();
             if(typeof renderV2ScoreArea === 'function') renderV2ScoreArea(); 
             if(typeof window.renderLatestStatus === 'function') window.renderLatestStatus();
 if(typeof window.renderTimeDataSection === 'function') window.renderTimeDataSection();
@@ -6858,6 +6879,18 @@ window.__getLogoCtx = function (ns) {
             repanel: function () { try { if (window.__rebuildSsPanel) window.__rebuildSsPanel(); } catch (e) {} }
         };
     }
+    if (ns === 'earn') {
+        return {
+            S: window.earnSettings || {},
+            slot: 'earnLogoSlot', wrap: 'earnTitleWrap', hideWrapWhenEmpty: true,
+            save: function () { try { localStorage.setItem('earnSettings', JSON.stringify(window.earnSettings)); } catch (e) {} },
+            rerender: function () {
+                try { window.renderModuleLogo('earn'); } catch (e) {}
+                try { if (typeof window.renderEarnings === 'function') window.renderEarnings(); } catch (e) {}
+            },
+            repanel: function () { try { if (window.__rebuildEarnPanel) window.__rebuildEarnPanel(); } catch (e) {} }
+        };
+    }
     return null;
 };
 window.renderModuleLogo = function (ns) {
@@ -6955,6 +6988,7 @@ window.toggleModuleLogoShadow = function (ns) {
 setTimeout(function () {
     try { window.renderModuleLogo('ovo'); } catch (e) {}
     try { window.renderModuleLogo('ss'); } catch (e) {}
+    try { window.renderModuleLogo('earn'); } catch (e) {}
 }, 900);
 // 【全新重构】1V1-擂台区 (玩家独立卡片版 · 像素级复刻设计稿)
 // 每位玩家一张独立卡片：顶部左头像+右侧胜/总/负统计，下方为与各玩家的白底对局胶囊
@@ -7017,7 +7051,9 @@ setTimeout(function () {
             { key: 'vsRowGap',     label: '对局卡片行间距', min: 0,  max: 36, def: 10, unit: 'px' },
             { key: 'vsPad',        label: '对局卡片内边距', min: 0,  max: 28, def: 8,  unit: 'px' },
             { key: 'vsCardRadius', label: '对局卡片圆角',   min: 0,  max: 34, def: 14, unit: 'px' },
-            { key: 'vsInnerGap',   label: '对局卡片内部间距', min: 0, max: 28, def: 8, unit: 'px' }
+            { key: 'vsInnerGap',   label: '对局卡片内部间距', min: 0, max: 28, def: 8, unit: 'px' },
+            { key: 'vsPillGap',    label: '对局↔中间局数胶囊间距', min: 0, max: 60, def: 8, unit: 'px' },
+            { key: 'vsPillX',      label: '间距左右镜像偏移(正负)', min: -40, max: 40, def: 0, unit: 'px' }
         ]},
         { group: '文字', items: [
             { key: 'numStroke', label: '数字描边宽度', min: 0, max: 5, step: 0.5, def: 2, unit: 'px' }
@@ -7261,7 +7297,7 @@ setTimeout(function () {
             return `
             <div class="w-full bg-white flex items-center justify-center" style="position:relative;overflow:visible;border:2px solid #5E4B8B;border-radius:${S.vsCardRadius}px;padding:${S.vsPad}px;gap:0;box-shadow:0 2px 0 rgba(94,75,139,0.2);">
                 ${vsAva(p, 'left')}
-                <div class="flex flex-col items-center justify-center shrink-0" style="gap:2px;">
+                <div class="flex flex-col items-center justify-center shrink-0" style="gap:2px;margin-right:${pillGapL}px;">
                     <div class="flex items-center justify-center font-black text-white" style="width:${S.vsCapW}px;height:${S.vsCapH}px;background:${p.color};border:2px solid #5E4B8B;border-radius:${S.vsCapRadius}px;font-size:${S.vsNumSize}px;line-height:1;${numStrokeCss(S.numStroke)}">${myWins}</div>
                     <span class="font-black" style="font-size:${S.vsPctSize}px;color:#5E4B8B;line-height:1;">${myPct}</span>
                 </div>
@@ -7269,7 +7305,7 @@ setTimeout(function () {
                     <div class="flex items-center justify-center font-black text-white" style="min-width:${S.vsPillW}px;padding:0 5px;height:${Math.max(18, Math.round(S.vsCapH * 0.6))}px;background:${pillBg};border:2px solid ${pillBorder};border-radius:9999px;font-size:${Math.max(11, Math.round(S.vsTextSize * 0.7))}px;line-height:1;${numStrokeCss(Math.min(S.numStroke, 2))}">${games}</div>
                     <span class="font-black" style="font-size:${S.vsTextSize}px;color:#5E4B8B;line-height:1;letter-spacing:1px;">VS</span>
                 </div>
-                <div class="flex flex-col items-center justify-center shrink-0" style="gap:2px;">
+                <div class="flex flex-col items-center justify-center shrink-0" style="gap:2px;margin-left:${pillGapR}px;">
                     <div class="flex items-center justify-center font-black text-white" style="width:${S.vsCapW}px;height:${S.vsCapH}px;background:${o.color};border:2px solid #5E4B8B;border-radius:${S.vsCapRadius}px;font-size:${S.vsNumSize}px;line-height:1;${numStrokeCss(S.numStroke)}">${oppWins}</div>
                     <span class="font-black" style="font-size:${S.vsPctSize}px;color:#5E4B8B;line-height:1;">${oppPct}</span>
                 </div>
@@ -7353,7 +7389,11 @@ setTimeout(function () {
         // 卡片纵向无限延伸 (默认擂台卡片视图，顶部留出设置按钮与头像上探的空间)
         // 【与最上方的间距】topGap = 0 时卡片顶边完全贴合顶部（头像按设置上探，可自由超出）
         const _topGap = (S.topGap === undefined) ? 68 : S.topGap;
-        content.innerHTML = `<div class="w-full flex flex-col items-center" style="gap:${S.cardGap}px;padding-top:${Math.max(0, _topGap)}px;">${active.map(buildPlayerCard).join('')}</div>`;
+        // 【新增】卡片按「当前区间(已用 viewRounds 过滤)」内的 1V1 胜场数降序排序，取代固定顺序
+        const _winCnt = {};
+        ovoMatches.forEach(function (_m) { if (_m.winner != null) _winCnt[_m.winner] = (_winCnt[_m.winner] || 0) + 1; });
+        const _sortedActive = active.slice().sort(function (_a, _b) { return (_winCnt[_b.id] || 0) - (_winCnt[_a.id] || 0); });
+        content.innerHTML = `<div class="w-full flex flex-col items-center" style="gap:${S.cardGap}px;padding-top:${Math.max(0, _topGap)}px;">${_sortedActive.map(buildPlayerCard).join('')}</div>`;
     };
 
     // ===== 设置按钮显隐：仅当 1V1 擂台模块可见时显示 (MutationObserver 零侵入监听) =====
@@ -7374,6 +7414,670 @@ setTimeout(function () {
         new MutationObserver(syncOvoBtnVisibility).observe(ovoSecEl, { attributes: true, attributeFilter: ['style', 'class'] });
     }
     setTimeout(syncOvoBtnVisibility, 600);
+})();
+// ==========================================
+// ============================================================
+// 【新增模块】收益榜
+// · 主视图：一位玩家一条，显示其「当前区间」内的总收入（自动汇总，实时刷新）
+// · 编辑图：自动识别场次与输赢（同一场次唯一赢家，其余全部为输家）
+//          输家输入框填数值 = 该输家输掉的数值；赢家收入 = 本场所有输家数值之和
+// · 全部样式参数在右上角 ⚙ 里精细调节，自动保存到本机 localStorage
+// · 设置面板「首次打开才生成」，输入采用防抖保存，绝不拖慢页面
+// ============================================================
+(function(){
+    // ===== 默认设置 =====
+    const EARN_DEFAULTS = {
+        cardMaxWidth: 520, cardRadius: 18, cardBorder: 3, cardGap: 10, cardPad: 12, cardOpacity: 100,
+        topGap: 52, titleGap: 12,
+        rowH: 54, rowRadius: 14, rowPadX: 10, rowGap: 8, rowOpacity: 100, rowBorder: 2,
+        rankCapW: 30, rankCapH: 30, rankCapRadius: 15, rankNumSize: 15, rankGap: 8,
+        avatarSize: 44, avatarOutline: 2, avatarGap: 8, avatarLift: 12, avatarX: 0,
+        nameSize: 15, numSize: 20, subSize: 11, numStroke: 1.5, nameGap: 4,
+        barH: 12, barRadius: 8, barGap: 6, barMaxPct: 100,
+        winsPillH: 26, winsPillPadX: 10, winsPillRadius: 14, winsPillBorder: 3, winsTextSize: 14, winsStroke: 1, winsGap: 6,
+        // 编辑图
+        editCardRadius: 16, editCardPad: 10, editGap: 10, editRowH: 40, editRowGap: 6, editCardBorder: 3,
+        editAvatarSize: 30, editNameSize: 13, editTitleSize: 14, editSubSize: 11,
+        inputW: 84, inputH: 34, inputFontSize: 15, inputRadius: 10, inputBorder: 3,
+        // 开关
+        theme: 0,         showRank: 1, showAvatar: 1, showBar: 1, showWins: 1, showZero: 1, editNewFirst: 1,
+        // 标题 LOGO
+        logoData: '', logoShow: 1, logoW: 170, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0,
+        logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0
+    };
+
+    // ===== 配色主题（默认「红盈绿亏」，符合国内涨红跌绿习惯）=====
+    const EARN_THEMES = [
+        { name: '红盈绿亏', pos: '#EF4444', neg: '#22C55E', barPos: '#FCA5A5', barNeg: '#86EFAC' },
+        { name: '金盈灰亏', pos: '#F59E0B', neg: '#94A3B8', barPos: '#FCD34D', barNeg: '#CBD5E1' },
+        { name: '蓝盈橙亏', pos: '#3B82F6', neg: '#FB923C', barPos: '#93C5FD', barNeg: '#FDBA74' },
+        { name: '紫盈粉亏', pos: '#8B5CF6', neg: '#EC4899', barPos: '#C4B5FD', barNeg: '#F9A8D4' }
+    ];
+
+    // ===== 设置面板滑块清单（分组显示，默认全部锁定，防止滚动误触）=====
+    const EARN_SLIDERS = [
+        { group: '榜单卡片', items: [
+            { key: 'cardMaxWidth', label: '榜单最大宽度', min: 280, max: 760, def: 520, unit: 'px' },
+            { key: 'cardRadius',   label: '榜单圆角',     min: 0,  max: 40, def: 18, unit: 'px' },
+            { key: 'cardBorder',   label: '榜单边框粗细', min: 0,  max: 8,  def: 3,  unit: 'px' },
+            { key: 'cardPad',      label: '榜单内边距',   min: 0,  max: 40, def: 12, unit: 'px' },
+            { key: 'cardGap',      label: '条目之间间距', min: 0,  max: 40, def: 10, unit: 'px' },
+            { key: 'cardOpacity',  label: '榜单不透明度', min: 20, max: 100, def: 100, unit: '%' },
+            { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' }
+        ]},
+        { group: '收益条', items: [
+            { key: 'rowH',       label: '条高度',       min: 34, max: 110, def: 54, unit: 'px' },
+            { key: 'rowRadius',  label: '条圆角',       min: 0,  max: 34,  def: 14, unit: 'px' },
+            { key: 'rowPadX',    label: '条左右内边距', min: 0,  max: 30,  def: 10, unit: 'px' },
+            { key: 'rowGap',     label: '条之间间距',   min: 0,  max: 30,  def: 8,  unit: 'px' },
+            { key: 'rowBorder',  label: '条边框粗细',   min: 0,  max: 6,   def: 2,  unit: 'px' },
+            { key: 'rowOpacity', label: '条底色不透明度', min: 20, max: 100, def: 100, unit: '%' }
+        ]},
+        { group: '名次胶囊', items: [
+            { key: 'rankCapW',      label: '名次胶囊宽',   min: 18, max: 70, def: 30, unit: 'px' },
+            { key: 'rankCapH',      label: '名次胶囊高',   min: 18, max: 70, def: 30, unit: 'px' },
+            { key: 'rankCapRadius', label: '名次胶囊圆角', min: 0,  max: 35, def: 15, unit: 'px' },
+            { key: 'rankNumSize',   label: '名次数字大小', min: 9,  max: 34, def: 15, unit: 'px' },
+            { key: 'rankGap',       label: '名次与头像间距', min: 0, max: 30, def: 8, unit: 'px' }
+        ]},
+        { group: '头像（悬浮）', items: [
+            { key: 'avatarSize',    label: '头像大小',     min: 20, max: 110, def: 44, unit: 'px' },
+            { key: 'avatarOutline', label: '头像白边宽度', min: 0,  max: 5,  def: 2,  unit: 'px' },
+            { key: 'avatarLift',    label: '向上悬浮高度', min: 0,  max: 40, def: 12, unit: 'px' },
+            { key: 'avatarX',       label: '水平偏移',     min: -30, max: 30, def: 0, unit: 'px' },
+            { key: 'avatarGap',     label: '头像与名字间距', min: 0, max: 30, def: 8, unit: 'px' }
+        ]},
+        { group: '文字', items: [
+            { key: 'nameSize',  label: '玩家名字大小', min: 9,  max: 34, def: 15, unit: 'px' },
+            { key: 'numSize',   label: '金额数字大小', min: 12, max: 44, def: 20, unit: 'px' },
+            { key: 'subSize',   label: '副文字大小',   min: 8,  max: 24, def: 11, unit: 'px' },
+            { key: 'numStroke', label: '数字描边宽度', min: 0,  max: 5, step: 0.5, def: 1.5, unit: 'px' },
+            { key: 'nameGap',   label: '名字与金额间距', min: 0, max: 20, def: 4, unit: 'px' }
+        ]},
+        { group: '胜局胶囊', items: [
+            { key: 'winsPillH',      label: '胜局胶囊高',     min: 16, max: 60, def: 26, unit: 'px' },
+            { key: 'winsPillPadX',   label: '胜局胶囊内边距', min: 0,  max: 24, def: 10, unit: 'px' },
+            { key: 'winsPillRadius', label: '胜局胶囊圆角',   min: 0,  max: 30, def: 14, unit: 'px' },
+            { key: 'winsPillBorder', label: '胜局胶囊描边',   min: 0,  max: 8,  def: 3,  unit: 'px' },
+            { key: 'winsTextSize',   label: '胜局文字大小',   min: 8,  max: 26, def: 14, unit: 'px' },
+            { key: 'winsStroke',     label: '胜局文字描边',   min: 0,  max: 4, step: 0.5, def: 1, unit: 'px' },
+            { key: 'winsGap',        label: '金额与胜局间距', min: 0,  max: 30, def: 6,  unit: 'px' }
+        ]},
+        { group: '编辑图·轮次卡片', items: [
+            { key: 'editCardRadius',  label: '场次卡片圆角',   min: 0,  max: 36, def: 16, unit: 'px' },
+            { key: 'editCardBorder',  label: '场次卡片边框',   min: 0,  max: 8,  def: 3,  unit: 'px' },
+            { key: 'editCardPad',     label: '场次卡片内边距', min: 0,  max: 30, def: 10, unit: 'px' },
+            { key: 'editGap',         label: '场次卡片间距',   min: 0,  max: 40, def: 10, unit: 'px' },
+            { key: 'editRowH',        label: '输家行高',       min: 28, max: 90, def: 40, unit: 'px' },
+            { key: 'editRowGap',      label: '输家行间距',     min: 0,  max: 30, def: 6,  unit: 'px' },
+            { key: 'editAvatarSize',  label: '输家头像大小',   min: 18, max: 80, def: 30, unit: 'px' },
+            { key: 'editNameSize',    label: '输家名字大小',   min: 9,  max: 30, def: 13, unit: 'px' },
+            { key: 'editTitleSize',   label: '场次标题大小',   min: 10, max: 32, def: 14, unit: 'px' },
+            { key: 'editSubSize',     label: '结算文字大小',   min: 8,  max: 26, def: 11, unit: 'px' }
+        ]},
+        { group: '编辑图·输入框', items: [
+            { key: 'inputW',        label: '输入框宽度',   min: 50, max: 200, def: 84, unit: 'px' },
+            { key: 'inputH',        label: '输入框高度',   min: 24, max: 70,  def: 34, unit: 'px' },
+            { key: 'inputFontSize', label: '输入数字大小', min: 10, max: 34,  def: 15, unit: 'px' },
+            { key: 'inputRadius',   label: '输入框圆角',   min: 0,  max: 24,  def: 10, unit: 'px' },
+            { key: 'inputBorder',   label: '输入框边框',   min: 0,  max: 6,   def: 3,  unit: 'px' }
+        ]},
+        { group: '标题LOGO（替换文字标题）', items: [
+            { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
+            { key: 'titleGap',    label: 'LOGO与内容间距', min: 0,    max: 40,  def: 12,  unit: 'px' },
+            { key: 'logoW',       label: 'LOGO宽度',       min: 30,   max: 420, def: 170, unit: 'px' },
+            { key: 'logoH',       label: 'LOGO高度(0=自动)', min: 0,  max: 300, def: 0,   unit: 'px' },
+            { key: 'logoX',       label: 'LOGO水平偏移',   min: -200, max: 200, def: 0,   unit: 'px' },
+            { key: 'logoY',       label: 'LOGO垂直偏移',   min: -100, max: 100, def: 0,   unit: 'px' },
+            { key: 'logoRotate',  label: 'LOGO旋转角度',   min: -180, max: 180, def: 0,   unit: '°' },
+            { key: 'logoOpacity', label: 'LOGO不透明度',   min: 10,   max: 100, def: 100, unit: '%' },
+            { key: 'logoOutline', label: 'LOGO白色描边',   min: 0,    max: 8,   def: 0,   unit: 'px' }
+        ]}
+    ];
+
+    window.earnSettings = Object.assign({}, EARN_DEFAULTS);
+    try {
+        const s = JSON.parse(localStorage.getItem('earnSettings') || '{}');
+        for (const k in EARN_DEFAULTS) if (s[k] !== undefined) window.earnSettings[k] = s[k];
+    } catch (e) {}
+
+    window.earnViewMode = 'main';
+    try { const m = localStorage.getItem('earnViewMode'); if (m === 'main' || m === 'edit') window.earnViewMode = m; } catch (e) {}
+
+    const saveEarnSettings = function () {
+        try { localStorage.setItem('earnSettings', JSON.stringify(window.earnSettings)); } catch (e) {}
+    };
+
+    // ===== 数据层（挂在 gameData.earnings 上，随主存档一起持久化）=====
+    const earnData = function () {
+        if (!gameData.earnings) gameData.earnings = { entries: {}, winners: {}, unit: '¥' };
+        if (!gameData.earnings.entries) gameData.earnings.entries = {};
+        if (!gameData.earnings.winners) gameData.earnings.winners = {};
+        if (gameData.earnings.unit === undefined) gameData.earnings.unit = '¥';
+        return gameData.earnings;
+    };
+    const earnUnit = function () { try { return earnData().unit || '¥'; } catch (e) { return '¥'; } };
+
+    const earnViewRounds = function () {
+        let src = (typeof viewRounds !== 'undefined' && viewRounds && viewRounds.length) ? viewRounds : gameData.rounds;
+        return src || [];
+    };
+    // ===== 轮次：直接读取「场次记录」(gameData.sessions)。
+    // 每条场次记录 = 一个轮次，覆盖 [起始局, 结束局] 范围内的局；
+    // 轮次包含的局 = 局号落在 [start, end] 内、且属于当前区间(viewRounds)的局。 =====
+    const earnCycles = function () {
+        const vRounds = earnViewRounds();
+        const vMap = {};
+        vRounds.forEach(function (r) { vMap[r.round] = r; });
+        const sessions = (gameData.sessions || []).slice().sort(function (a, b) {
+            if (a.date !== b.date) return parseInt(a.date) - parseInt(b.date);
+            return a.start - b.start;
+        });
+        const list = [];
+        sessions.forEach(function (s) {
+            const start = Number(s.start), end = Number(s.end);
+            const rounds = [];
+            for (let rn = start; rn <= end; rn++) { if (vMap[rn]) rounds.push(vMap[rn]); }
+            if (rounds.length === 0) return; // 该场次在当前区间内没有局，则跳过
+            list.push({ key: 'C' + start + '-' + end, firstR: start, lastR: end, session: s, rounds: rounds });
+        });
+        return list;
+    };
+    // 自动识别一个轮次的赢家：与「场次记录」完全一致——
+    // 该轮次内所有局「净得分(changes 之和)」最高的玩家；并列时取首位；若最高者 ≤0 则视为无赢家。
+    const earnAutoWinner = function (cycle) {
+        const active = gameData.players.filter(p => p.isActive);
+        let best = null, bestSum = -Infinity;
+        active.forEach(function (p) {
+            let sum = 0;
+            cycle.rounds.forEach(function (r) {
+                const c = (r.changes && r.changes[String(p.id)] !== undefined) ? Number(r.changes[String(p.id)]) : 0;
+                sum += c;
+            });
+            if (sum > bestSum) { best = p.id; bestSum = sum; }
+        });
+        return (best !== null && bestSum > 0) ? String(best) : null;
+    };
+    // 识别一个轮次里「真正参与」的玩家：在某条局的 changes 中登记过（!= undefined）即视为参与
+    const earnParticipants = function (cycle) {
+        const active = gameData.players.filter(p => p.isActive).map(p => String(p.id));
+        const part = {};
+        cycle.rounds.forEach(function (r) {
+            active.forEach(function (id) {
+                if (r.changes && r.changes[id] !== undefined) part[id] = true;
+            });
+        });
+        return part;
+    };
+    const earnCycleInfo = function (cycle) {
+        const key = cycle.key;
+        const part = earnParticipants(cycle);
+        let winnerId = null;
+        try { winnerId = (earnData().winners && earnData().winners[key] != null) ? String(earnData().winners[key]) : null; } catch (e) {}
+        if (!winnerId || !part[winnerId]) winnerId = earnAutoWinner(cycle);
+        const losers = Object.keys(part).filter(function (id) { return id !== winnerId; });
+        return { key: key, firstR: cycle.firstR, lastR: cycle.lastR, winnerId: winnerId, losers: losers, participants: Object.keys(part) };
+    };
+    const earnGet = function (key, pid) {
+        const e = earnData().entries[key];
+        if (!e) return 0;
+        const v = e[String(pid)];
+        return (v === undefined || v === null || v === '') ? 0 : (Number(v) || 0);
+    };
+    const earnCycleSum = function (info) {
+        let s = 0;
+        for (let i = 0; i < info.losers.length; i++) s += earnGet(info.key, info.losers[i]);
+        return s;
+    };
+    const earnTotals = function () {
+        const infos = earnCycles().map(earnCycleInfo);
+        const tot = {}, wins = {};
+        infos.forEach(function (info) {
+            if (!info.winnerId) return;
+            wins[info.winnerId] = (wins[info.winnerId] || 0) + 1;
+            const sum = earnCycleSum(info);
+            tot[info.winnerId] = (tot[info.winnerId] || 0) + sum;
+            info.losers.forEach(function (id) {
+                tot[id] = (tot[id] || 0) - earnGet(info.key, id);
+            });
+        });
+        return { infos: infos, tot: tot, wins: wins };
+    };
+
+    const fmt = function (v) { return String(Math.round((Number(v) || 0) * 100) / 100); };
+    const moneyText = function (v) {
+        const u = earnUnit();
+        return (v > 0 ? '+' : (v < 0 ? '-' : '')) + u + fmt(Math.abs(v));
+    };
+    const themeOf = function () { return EARN_THEMES[window.earnSettings.theme] || EARN_THEMES[0]; };
+    const colorOf = function (v) { const t = themeOf(); return v > 0 ? t.pos : (v < 0 ? t.neg : '#5E4B8B'); };
+    const numStrokeCss = function (w) { return w > 0 ? '-webkit-text-stroke:' + w + 'px #5E4B8B;paint-order:stroke fill;' : ''; };
+    const hexToRgba = function (hex, a) {
+        let h = String(hex || '').trim();
+        if (h.charAt(0) === '#') h = h.slice(1);
+        if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+        const n = parseInt(h, 16);
+        if (isNaN(n) || h.length !== 6) return hex;
+        return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+    };
+    const sticker = function (imgTag, w) {
+        let inner = imgTag;
+        const layer = 'filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff);';
+        for (let i = 0; i < Math.round(w); i++) inner = '<span style="display:inline-block;line-height:0;' + layer + '">' + inner + '</span>';
+        return inner;
+    };
+    const avatarImg = function (p, size) {
+        return '<img src="' + p.avatar + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;display:block;" draggable="false">';
+    };
+    const nameOf = function (pid) {
+        const p = gameData.players.find(x => String(x.id) === String(pid));
+        return p ? p : null;
+    };
+
+    // ===== 防抖保存（避免每次按键都整包序列化主存档）=====
+    let _saveTimer = null;
+    const saveEarnData = function () {
+        if (_saveTimer) clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(function () { try { saveData(); } catch (e) {} }, 320);
+    };
+
+    // ===== 主视图：一位玩家一条 =====
+    const buildMainView = function (totals) {
+        const S = window.earnSettings;
+        const th = themeOf();
+        const unit = earnUnit();
+        const active = gameData.players.filter(p => p.isActive);
+        let list = active.map(function (p) {
+            return { p: p, v: totals.tot[String(p.id)] || 0, w: totals.wins[String(p.id)] || 0 };
+        });
+        if (!S.showZero) list = list.filter(x => x.v !== 0);
+        list.sort(function (a, b) { return b.v - a.v; });
+
+        if (!list.length) {
+            return '<div class="w-full text-center font-black text-[#5E4B8B] opacity-60 py-6" style="font-size:' + S.subSize + 'px;">当前区间暂无收益数据</div>';
+        }
+
+        let maxAbs = 0;
+        list.forEach(function (x) { if (Math.abs(x.v) > maxAbs) maxAbs = Math.abs(x.v); });
+        if (maxAbs <= 0) maxAbs = 1;
+
+        // 行结构（参照设计图）：名次胶囊 | 悬浮头像 | 名字 | 金额(居中) | 胜局胶囊
+        // 五个元素纵向居中对齐；头像独立悬浮（relative top 上移 + z-index 最高，不影响其他元素布局）
+        const rows = list.map(function (x, idx) {
+            const p = x.p;
+            const v = x.v;
+            const rankBg = idx === 0 ? '#FFCE3C' : (idx === 1 ? '#C6CEDD' : (idx === 2 ? '#E8A06A' : '#F1504B'));
+            const lift = S.avatarLift === undefined ? 12 : S.avatarLift;
+            const ax = S.avatarX || 0;
+            const winsStrokeW = S.winsStroke === undefined ? 1 : S.winsStroke;
+            const winsTextSz = S.winsTextSize === undefined ? 14 : S.winsTextSize;
+            const winsBorderW = S.winsPillBorder === undefined ? 3 : S.winsPillBorder;
+            return '' +
+            '<div style="position:relative;width:100%;max-width:' + S.cardMaxWidth + 'px;height:' + S.rowH + 'px;box-sizing:border-box;' +
+                'background:' + hexToRgba(p.color, S.rowOpacity / 100) + ';border:' + S.rowBorder + 'px solid #5E4B8B;' +
+                'border-radius:' + S.rowRadius + 'px;padding:0 ' + S.rowPadX + 'px;display:flex;align-items:center;overflow:visible;">' +
+                (S.showRank ?
+                    '<div class="flex items-center justify-center shrink-0" style="width:' + S.rankCapW + 'px;height:' + S.rankCapH + 'px;' +
+                    'background:' + rankBg + ';border:2px solid #5E4B8B;border-radius:' + S.rankCapRadius + 'px;margin-right:' + S.rankGap + 'px;' +
+                    'font-size:' + S.rankNumSize + 'px;line-height:1;color:#FFFFFF;' + numStrokeCss(Math.min(S.numStroke, 2)) + '">' + (idx + 1) + '</div>'
+                    : '') +
+                (S.showAvatar ?
+                    '<div class="shrink-0" style="position:relative;z-index:20;top:' + (-lift) + 'px;width:' + S.avatarSize + 'px;height:' + S.avatarSize + 'px;' +
+                    'margin-left:' + ax + 'px;margin-right:' + S.avatarGap + 'px;">' +
+                        sticker(avatarImg(p, S.avatarSize), S.avatarOutline) + '</div>'
+                    : '') +
+                '<span class="font-black shrink-0" style="font-size:' + S.nameSize + 'px;color:#FFFFFF;line-height:1;white-space:nowrap;' + numStrokeCss(Math.min(S.numStroke, 1.5)) + '">' + p.name + '</span>' +
+                '<div class="min-w-0" style="flex:1 1 0;display:flex;justify-content:center;align-items:center;margin:0 ' + S.nameGap + 'px;">' +
+                    '<span class="font-black" data-earn-total="' + p.id + '" style="font-size:' + S.numSize + 'px;color:#FFFFFF;line-height:1;white-space:nowrap;' + numStrokeCss(S.numStroke) + '">' + moneyText(v) + '</span>' +
+                '</div>' +
+                (S.showWins ?
+                    '<div class="shrink-0 flex items-center justify-center font-black" style="height:' + S.winsPillH + 'px;padding:0 ' + S.winsPillPadX + 'px;margin-left:' + (S.winsGap === undefined ? 6 : S.winsGap) + 'px;' +
+                    'background:#f6e243;border:' + winsBorderW + 'px solid #cc7c00;border-radius:' + S.winsPillRadius + 'px;' +
+                    'font-size:' + winsTextSz + 'px;line-height:1;color:#FFFFFF;-webkit-text-stroke:' + winsStrokeW + 'px #cc7c00;paint-order:stroke fill;">胜 ' + x.w + '</div>'
+                    : '') +
+            '</div>';
+        }).join('');
+
+        return '<div class="w-full flex flex-col items-center" style="gap:' + S.rowGap + 'px;max-width:' + S.cardMaxWidth + 'px;">' + rows + '</div>';
+    };
+
+    // ===== 编辑图：单轮次「本场得分排名」（列出该轮次参与者、各自本场得分、按得分降序，实时刷新）=====
+    const cycleRankRows = function (info) {
+        const S = window.earnSettings;
+        const part = info.participants || [];
+        if (!part.length) return '';
+        const list = part.map(function (id) {
+            let v = 0;
+            if (info.winnerId && String(id) === String(info.winnerId)) v = earnCycleSum(info);
+            else v = -earnGet(info.key, id);
+            return { id: String(id), v: v };
+        });
+        list.sort(function (a, b) { return b.v - a.v; });
+        return list.map(function (x, idx) {
+            const p = nameOf(x.id);
+            if (!p) return '';
+            const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : (idx + 1)));
+            return '<div class="w-full flex items-center justify-between" style="min-height:28px;padding:1px 4px;background:' + (idx % 2 ? 'rgba(94,75,139,0.06)' : 'transparent') + ';border-radius:7px;">' +
+                '<div class="flex items-center gap-1.5 min-w-0">' +
+                    '<span class="font-black shrink-0" style="font-size:12px;width:18px;text-align:center;">' + medal + '</span>' +
+                    sticker(avatarImg(p, 20), 1) +
+                    '<span class="font-black truncate" style="font-size:11px;color:' + p.color + ';' + numStrokeCss(1) + '">' + p.name + '</span>' +
+                '</div>' +
+                '<span class="font-black shrink-0" style="font-size:12px;color:' + colorOf(x.v) + ';' + numStrokeCss(1) + '">' + moneyText(x.v) + '</span>' +
+            '</div>';
+        }).join('');
+    };
+
+    // ===== 编辑图：按场次录入输家数值 =====
+    const buildEditView = function (totals) {
+        const S = window.earnSettings;
+        const th = themeOf();
+        let arr = totals.infos.slice();
+        if (S.editNewFirst) arr.reverse();
+
+        if (!arr.length) {
+            return '<div class="w-full text-center font-black text-[#5E4B8B] opacity-60 py-6" style="font-size:' + S.editSubSize + 'px;">当前区间暂无轮次（请先在「场次记录」中添加覆盖本区间的场次）</div>';
+        }
+
+        const cards = arr.map(function (info, idx) {
+            const cycKey = info.key;
+            const w = info.winnerId ? nameOf(info.winnerId) : null;
+            const sum = info.winnerId ? earnCycleSum(info) : 0;
+            const loserRows = info.losers.map(function (pid) {
+                const p = nameOf(pid);
+                if (!p) return '';
+                const e = earnData().entries[cycKey];
+                const val = (e && e[String(pid)] !== undefined && e[String(pid)] !== null && e[String(pid)] !== '') ? e[String(pid)] : '';
+                return '' +
+                '<div class="w-full flex items-center justify-between" style="min-height:' + S.editRowH + 'px;">' +
+                    '<div class="flex items-center gap-2 min-w-0">' +
+                        sticker(avatarImg(p, S.editAvatarSize), Math.min(S.avatarOutline, 3)) +
+                        '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + p.color + ';' + numStrokeCss(1) + '">' + p.name + '</span>' +
+                        '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">输</span>' +
+                    '</div>' +
+                    '<input type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + val + '" ' +
+                        'oninput="window.earnInput(\'' + cycKey + '\',\'' + pid + '\',this.value)" ' +
+                        'style="width:' + S.inputW + 'px;height:' + S.inputH + 'px;font-size:' + S.inputFontSize + 'px;' +
+                        'border:' + S.inputBorder + 'px solid #5E4B8B;border-radius:' + S.inputRadius + 'px;text-align:center;' +
+                        'font-weight:900;color:#5E4B8B;background:#FFFDF5;outline:none;box-sizing:border-box;">' +
+                '</div>';
+            }).join('');
+
+            return '' +
+            '<div class="w-full" style="max-width:' + S.cardMaxWidth + 'px;box-sizing:border-box;background:rgba(255,255,255,0.94);' +
+                'border:' + S.editCardBorder + 'px solid #5E4B8B;border-radius:' + S.editCardRadius + 'px;padding:' + S.editCardPad + 'px;">' +
+                '<div class="w-full flex items-center justify-between" style="margin-bottom:6px;">' +
+                    '<div class="flex items-center gap-2 min-w-0">' +
+                        '<span class="font-black text-white shrink-0 flex items-center justify-center" style="height:26px;padding:0 10px;background:#5E4B8B;border-radius:13px;font-size:' + S.editTitleSize + 'px;line-height:1;">第 ' + (idx + 1) + ' 轮次</span>' +
+                        '<span class="font-black shrink-0" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">（第' + info.firstR + '–' + info.lastR + '局）</span>' +
+                        (w ?
+                            '<div class="flex items-center gap-1 min-w-0">' +
+                                sticker(avatarImg(w, S.editAvatarSize), Math.min(S.avatarOutline, 3)) +
+                                '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + th.pos + ';' + numStrokeCss(1) + '">' + w.name + '</span>' +
+                                '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#5E4B8B;">赢</span>' +
+                            '</div>'
+                            : '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无赢家</span>') +
+                    '</div>' +
+                    '<div class="flex items-center gap-1 shrink-0">' +
+                        '<span class="font-black" data-earn-sum="' + cycKey + '" style="font-size:' + S.editNameSize + 'px;color:' + (sum > 0 ? th.pos : '#5E4B8B') + ';' + numStrokeCss(1) + '">' + (info.winnerId ? moneyText(sum) : '-') + '</span>' +
+                        '<button onclick="window.earnClearCycle(\'' + cycKey + '\')" title="清空本轮次" class="flex items-center justify-center" style="width:24px;height:24px;background:#F87171;border:2px solid #5E4B8B;border-radius:8px;color:#fff;font-size:11px;font-weight:900;line-height:1;">✕</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="w-full flex flex-col" style="gap:' + S.editRowGap + 'px;">' + (loserRows || '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无输家</span>') + '</div>' +
+                (info.participants && info.participants.length ?
+                '<div class="w-full" style="margin-top:' + S.editRowGap + 'px;background:rgba(94,75,139,0.05);border:1px dashed #5E4B8B;border-radius:10px;padding:6px 8px;">' +
+                    '<div class="font-black" style="font-size:' + S.editSubSize + 'px;color:#5E4B8B;margin-bottom:2px;">本场得分排名（按得分降序）</div>' +
+                    '<div class="w-full flex flex-col" style="gap:1px;" data-earn-crank-list="' + cycKey + '">' + cycleRankRows(info) + '</div>' +
+                '</div>'
+                : '') +
+            '</div>';
+        }).join('');
+
+        return '<div class="w-full flex flex-col items-center" style="gap:' + S.editGap + 'px;max-width:' + S.cardMaxWidth + 'px;">' + cards + '</div>';
+    };
+
+    // ===== 顶部工具条已移除：视图切换收进「设置」面板，汇总胶囊（区间X轮次）按需求移除；卡片与顶部之间不再有内容，便于放置 LOGO =====
+
+    // ===== 输入时的轻量局部刷新（不整块重渲染，保证输入框不失焦）=====
+    const updateEarnLive = function () {
+        const S = window.earnSettings;
+        const th = themeOf();
+        const totals = earnTotals();
+        try {
+            document.querySelectorAll('[data-earn-sum]').forEach(function (el) {
+                const cycKey = el.getAttribute('data-earn-sum');
+                let info = null;
+                for (let i = 0; i < totals.infos.length; i++) if (String(totals.infos[i].key) === String(cycKey)) { info = totals.infos[i]; break; }
+                if (!info || !info.winnerId) return;
+                const s = earnCycleSum(info);
+                el.textContent = moneyText(s);
+                el.style.color = s > 0 ? th.pos : '#5E4B8B';
+            });
+        } catch (e) {}
+        try {
+            const active = gameData.players.filter(p => p.isActive);
+            let maxAbs = 0;
+            active.forEach(function (p) { const v = Math.abs(totals.tot[String(p.id)] || 0); if (v > maxAbs) maxAbs = v; });
+            if (maxAbs <= 0) maxAbs = 1;
+            active.forEach(function (p) {
+                const v = totals.tot[String(p.id)] || 0;
+                const el = document.querySelector('[data-earn-total="' + p.id + '"]');
+                if (el) { el.textContent = moneyText(v); el.style.color = colorOf(v); }
+                const bar = document.querySelector('[data-earn-bar="' + p.id + '"]');
+                if (bar) {
+                    bar.style.width = Math.max(0, Math.min(100, Math.abs(v) / maxAbs * S.barMaxPct)) + '%';
+                    bar.style.background = v > 0 ? th.barPos : (v < 0 ? th.barNeg : '#E5E7EB');
+                }
+            });
+        } catch (e) {}
+        try {
+            if (window.earnViewMode === 'edit') {
+                document.querySelectorAll('[data-earn-crank-list]').forEach(function (el) {
+                    const cycKey = el.getAttribute('data-earn-crank-list');
+                    let info = null;
+                    for (let i = 0; i < totals.infos.length; i++) if (String(totals.infos[i].key) === String(cycKey)) { info = totals.infos[i]; break; }
+                    if (info) el.innerHTML = cycleRankRows(info);
+                });
+            }
+        } catch (e) {}
+    };
+
+    // ===== 主渲染 =====
+    window.renderEarnings = function () {
+        const section = document.getElementById('earningsSection');
+        const content = document.getElementById('earnContent');
+        if (!section || !content) return;
+        const active = gameData.players.filter(p => p.isActive);
+        if (!active.length) { section.classList.add('hidden'); return; }
+
+        const S = window.earnSettings;
+        try { window.renderModuleLogo('earn'); } catch (eLogo) {}
+
+        const totals = earnTotals();
+        if (window.earnViewMode === 'edit') content.innerHTML = buildEditView(totals);
+        else content.innerHTML = buildMainView(totals);
+        content.style.paddingTop = Math.max(0, (S.topGap === undefined ? 52 : S.topGap)) + 'px';
+    };
+
+    // ===== 交互：输家数值录入 =====
+    window.earnInput = function (cycKey, pid, val) {
+        const d = earnData();
+        if (!d.entries[cycKey]) d.entries[cycKey] = {};
+        const n = parseFloat(val);
+        d.entries[cycKey][String(pid)] = isNaN(n) ? 0 : n;
+        saveEarnData();
+        updateEarnLive();
+    };
+
+    window.earnClearCycle = function (cycKey) {
+        const d = earnData();
+        d.entries[cycKey] = {};
+        saveEarnData();
+        try { window.renderEarnings(); } catch (e) {}
+    };
+
+    window.setEarnViewMode = function (m) {
+        if (m !== 'main' && m !== 'edit') return;
+        window.earnViewMode = m;
+        try { localStorage.setItem('earnViewMode', m); } catch (e) {}
+        try { window.renderEarnings(); } catch (e) {}
+        try {
+            const p = document.getElementById('earnSettingsPanel');
+            if (p && !p.classList.contains('hidden')) { earnPanelBuilt = false; buildEarnPanel(); }
+        } catch (e) {}
+    };
+
+    // ===== 设置面板（首次打开才生成）=====
+    let earnPanelBuilt = false;
+    const buildEarnPanel = function () {
+        if (earnPanelBuilt) return;
+        const panel = document.getElementById('earnSettingsPanel');
+        if (!panel) return;
+        earnPanelBuilt = true;
+        const S = window.earnSettings;
+        window.__earnUnits = {};
+        let html = '' +
+        '<div class="flex justify-between items-center mb-1">' +
+            '<span class="font-black text-[#5E4B8B] text-xs sm:text-sm"><i class="fa-solid fa-sliders mr-1"></i>收益榜样式设置</span>' +
+            '<button onclick="window.toggleEarnSettings()" class="text-[#5E4B8B] hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>' +
+        '</div>' +
+        '<div class="arm-hint mb-2">提示：点亮某个分类胶囊（变绿）后才能拖动该组滑块；点灭（变灰）即锁定，滚动页面不会误改参数。</div>';
+
+        const flagRow = function (key, label) {
+            return '<div class="flex items-center justify-between mt-1 bg-[#F3F0FA] border-[1.5px] border-[#5E4B8B] rounded-lg px-2 py-1">' +
+                '<span class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">' + label + '</span>' +
+                '<button onclick="window.toggleEarnFlag(\'' + key + '\')" class="border-[2px] border-[#5E4B8B] rounded-full px-3 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ' + (S[key] ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + '">' + (S[key] ? '开' : '关') + '</button>' +
+            '</div>';
+        };
+
+        EARN_SLIDERS.forEach(function (g) {
+            const gk = g.group;
+            const armed = window.getGroupArmed('earn', gk);
+            html += '<div class="slider-group" data-panel="earn" data-gi="' + gk + '" data-armed="' + armed + '">' +
+                '<div class="grp-toggle ' + (armed ? 'grp-on' : '') + '" onclick="window.toggleSliderGroup(\'earn\', \'' + gk + '\')">' +
+                    '<span class="grp-dot"></span>' + g.group + '<span class="grp-state">' + (armed ? '✎ 可编辑' : '🔒 已锁定') + '</span>' +
+                '</div>' +
+                '<div class="grp-lock-hint">🔒 该组已锁定，点上方胶囊点亮后即可调节</div>' +
+                '<div class="grid grid-cols-2 gap-x-2 gap-y-1">';
+            g.items.forEach(function (it) {
+                const v = S[it.key];
+                window.__earnUnits[it.key] = it.unit;
+                html += '<div class="flex flex-col gap-0.5">' +
+                    '<label class="text-[9px] sm:text-[10px] font-bold text-[#5E4B8B] leading-tight">' + it.label + ': <span id="earn_' + it.key + '_Val">' + v + it.unit + '</span></label>' +
+                    '<input type="range" id="earn_' + it.key + '_Input" min="' + it.min + '" max="' + it.max + '" step="' + (it.step || 1) + '" value="' + v + '" ' + (armed ? '' : 'disabled') + ' class="w-full accent-[#6ca5eb] h-4" oninput="window.updateEarnSetting(\'' + it.key + '\', this.value)">' +
+                '</div>';
+            });
+            html += '</div></div>';
+        });
+
+        const viewBtn = function (m, txt, icon) {
+            const active = window.earnViewMode === m;
+            return '<button data-earn-view=' + JSON.stringify(m) + ' class="flex-1 flex items-center justify-center gap-1 border-[2px] border-[#5E4B8B] rounded-full font-black text-white shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all py-1" ' +
+                'style="font-size:11px;background:' + (active ? '#4ADE80' : '#94A3B8') + ';"><i class="fa-solid ' + icon + '"></i>' + txt + '</button>';
+        };
+        html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">视图切换</div>' +
+            '<div class="flex items-center gap-2">' +
+                viewBtn('main', '主视图', 'fa-ranking-star') +
+                viewBtn('edit', '编辑图', 'fa-pen-to-square') +
+            '</div>';
+        html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">配色主题</div>' +
+            '<div class="grid grid-cols-2 gap-1">' +
+            EARN_THEMES.map(function (t, i) {
+                return '<button onclick="window.setEarnTheme(' + i + ')" class="' + (S.theme === i ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + ' border-[2px] border-[#5E4B8B] rounded-lg py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">' + t.name + '</button>';
+            }).join('') + '</div>';
+
+        html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">显示开关</div>' +
+            flagRow('showRank', '显示名次胶囊') +
+            flagRow('showAvatar', '显示玩家头像') +
+            flagRow('showWins', '显示胜局胶囊') +
+            flagRow('showZero', '显示零收益玩家') +
+            flagRow('editNewFirst', '编辑图：最新轮次在最上');
+
+        html += '<div class="flex items-center justify-between mt-1 bg-[#F3F0FA] border-[1.5px] border-[#5E4B8B] rounded-lg px-2 py-1">' +
+            '<span class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">金额符号</span>' +
+            '<input type="text" maxlength="3" value="' + earnUnit() + '" oninput="window.setEarnUnit(this.value)" class="w-[58px] text-center border-[2px] border-[#5E4B8B] rounded-md text-[11px] font-black text-[#5E4B8B] outline-none">' +
+        '</div>';
+
+        html += (window.__logoPanelHtml ? window.__logoPanelHtml('earn', S, '标题LOGO（替换文字标题）') : '');
+
+        html += '<div class="flex justify-end mt-2">' +
+            '<button onclick="window.resetEarnSettings()" class="bg-[#FDE047] border-[2px] border-[#5E4B8B] rounded-full px-3 py-1 font-black text-[#5E4B8B] text-[10px] sm:text-xs shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none hover:brightness-110">恢复默认</button>' +
+        '</div>';
+
+        panel.innerHTML = html;
+        try {
+            panel.querySelectorAll('[data-earn-view]').forEach(function (b) {
+                b.addEventListener('click', function () { try { window.setEarnViewMode(b.getAttribute('data-earn-view')); } catch (e) {} });
+            });
+        } catch (e) {}
+        if (window.initAllArmSliders) window.initAllArmSliders();
+    };
+
+    window.__rebuildEarnPanel = function () { earnPanelBuilt = false; buildEarnPanel(); };
+
+    window.toggleEarnSettings = function () {
+        const panel = document.getElementById('earnSettingsPanel');
+        if (!panel) return;
+        buildEarnPanel();
+        panel.classList.toggle('hidden');
+    };
+
+    window.updateEarnSetting = function (key, value) {
+        const num = parseFloat(value);
+        if (isNaN(num)) return;
+        window.earnSettings[key] = num;
+        const valEl = document.getElementById('earn_' + key + '_Val');
+        if (valEl) valEl.textContent = num + (window.__earnUnits && window.__earnUnits[key] || '');
+        saveEarnSettings();
+        try { window.renderEarnings(); } catch (e) {}
+    };
+
+    window.toggleEarnFlag = function (key) {
+        window.earnSettings[key] = window.earnSettings[key] ? 0 : 1;
+        saveEarnSettings();
+        earnPanelBuilt = false; buildEarnPanel();
+        try { window.renderEarnings(); } catch (e) {}
+    };
+
+    window.setEarnTheme = function (i) {
+        window.earnSettings.theme = i;
+        saveEarnSettings();
+        earnPanelBuilt = false; buildEarnPanel();
+        try { window.renderEarnings(); } catch (e) {}
+    };
+
+    window.setEarnUnit = function (v) {
+        earnData().unit = (v === undefined || v === null) ? '' : String(v).slice(0, 3);
+        saveEarnData();
+        updateEarnLive();
+    };
+
+    window.resetEarnSettings = function () {
+        window.earnSettings = Object.assign({}, EARN_DEFAULTS);
+        saveEarnSettings();
+        earnPanelBuilt = false; buildEarnPanel();
+        try { window.renderEarnings(); } catch (e) {}
+    };
+
+    // ===== 设置按钮显隐：仅当收益榜模块（earningsSection）可见时显示，位于顶部全局背景按钮左侧 =====
+    const syncEarnBtnVisibility = function () {
+        const sec = document.getElementById('earningsSection');
+        const wrap = document.getElementById('earnSettingsWrap');
+        if (!sec || !wrap) return;
+        const visible = !sec.classList.contains('hidden') && sec.style.display !== 'none';
+        wrap.classList.toggle('hidden', !visible);
+        if (!visible) {
+            const panel = document.getElementById('earnSettingsPanel');
+            if (panel) panel.classList.add('hidden');
+        }
+    };
+    const earnSecEl = document.getElementById('earningsSection');
+    const earnWrapEl = document.getElementById('earnSettingsWrap');
+    if (earnSecEl && earnWrapEl && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(syncEarnBtnVisibility).observe(earnSecEl, { attributes: true, attributeFilter: ['style', 'class'] });
+    }
+    setTimeout(syncEarnBtnVisibility, 600);
+    setTimeout(function () { try { window.renderEarnings(); } catch (e) {} }, 950);
 })();
 // ==========================================
 
@@ -12471,12 +13175,12 @@ const mobileTabs = {
         'tab2': { name: '排行榜单', color: '#A3D977', modules:['championSectionWrapper', 'leaderboardSection'] },
         'tab3': { name: '奖杯荣誉', color: '#FDE047', modules:['badgeSection'] },
         'tab4': { name: '全场成就', color: '#fbbf24', modules:['achievementsSection'] },
-'tab5': { name: '详细数据', color: '#93C5FD', modules:['timeHistorySection', 'scoreFlowSection', 'pieChartSection', 'methodStatSection', 'methodDetailSection', 'chartSection', 'radarSection', 'oneVsOneSection', 'sessionSection', 'tableSection'] },
+'tab5': { name: '详细数据', color: '#93C5FD', modules:['timeHistorySection', 'scoreFlowSection', 'pieChartSection', 'methodStatSection', 'methodDetailSection', 'chartSection', 'radarSection', 'oneVsOneSection', 'sessionSection', 'earningsSection', 'tableSection'] },
         'tab6': { name: '随机抽选', color: '#7dd3fc', modules:['randomSelectorSection'] },
         'tab7': { name: '实时结算', color: '#d8b4e2', modules:['playerSection', 'timeRecordSection', 'timerSection', 'penaltySection', 'penaltyStatsSection'] },
         'tab8': { name: '后台管理', color: '#F472B6', modules:['cloudShareSection', 'methodManagerSection', 'dataIOSection', 'imageLibrarySection'] },
         'tab9': { name: '动态数据', color: '#6ee7b7', modules:['dynamicDataSection'] }, // <--- 全新：动态数据
-        'tab10': { name: '卡牌信息', color: '#E0E7FF', modules:['cardInfoSection'] }  // 原来的卡牌顺延
+        'tab10': { name: '卡牌信息', color: '#E0E7FF', modules:['cardInfoSection'] } // 原来的卡牌顺延
     };
 
 // 【观众模式判断】：观众端隐藏 实时结算、数据备份、卡牌信息
@@ -17439,6 +18143,7 @@ if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
 { id: 'methodDetail2Section', name: '结算详情2', color: '#fca5a5' },
         { id: 'pieChartSection', name: '得分占比', color: '#a3d977' },
         { id: 'sessionSection', name: '场次记录', color: '#fca5a5' },
+        { id: 'earningsSection', name: '收益榜', color: '#FCD9A6' },
         { id: 'tableSection', name: '局次得分详情', color: '#93c5fd' },
     ];
     
@@ -17510,6 +18215,7 @@ if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
                         void el.offsetWidth; 
                         el.classList.add('fade-in-module');
                     }
+                    if (mod.id === 'earningsSection') { try { window.renderEarnings(); } catch (e) {} }
                 } else {
                     el.style.setProperty('display', 'none', 'important');
                     el.classList.remove('fade-in-module');
