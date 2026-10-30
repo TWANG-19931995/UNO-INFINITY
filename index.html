@@ -3528,6 +3528,7 @@ let chartInstance = null;
                     window.broadcastTimeSync();
                 }
             }, 1000);
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
 
         // 暂停计时
@@ -3535,6 +3536,7 @@ let chartInstance = null;
             if (!trIsRunning) return;
             trIsRunning = false;
             clearInterval(trStopwatchInterval);
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
 
         // 重置计时
@@ -3548,6 +3550,7 @@ let chartInstance = null;
                 btnToggle.classList.remove('bg-[#F59E0B]');
                 btnToggle.classList.add('bg-[#4ADE80]');
             }
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
 
 // 【自适应】让「游玩总时长」永远不超出 LCD 显示视窗
@@ -3863,6 +3866,7 @@ let chartInstance = null;
 
             if (btnToggle) {
                 btnToggle.onclick = () => {
+                    if (myRole === 'client') return;
                     if (trIsRunning) {
                         pauseTrStopwatch();
                         btnToggle.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
@@ -3877,6 +3881,7 @@ let chartInstance = null;
 
             if(btnReset) {
                 btnReset.onclick = () => {
+                    if (myRole === 'client') return;
                     els.confirmMsg.innerText = "确定要清空当前的计时吗？";
                     els.confirmDialog.classList.remove('hidden');
                     
@@ -3905,6 +3910,8 @@ let chartInstance = null;
         let timerInterval = null;
         let timerSoundTimeout = null;
         let isTimerRunning = false;
+        let timeSyncSeq = 0;            // 主机时间同步序号：单调递增，用于丢弃迟到的旧数据包，彻底根绝时间回跳/拉扯
+        let lastTimeSyncSeq = 0;       // 副机最后成功接受的序号
 // 【V2新增】本局状态记忆：记住谁被淘汰了、谁赢了、这局复活过没
 let v2State = {
             eliminated: {}, 
@@ -4113,6 +4120,7 @@ async function uploadDataToCloud() {
                 data: currentData,
                 theme: currentTheme,
                 hidden: localStorage.getItem('unoHiddenModules') || '[]',
+                settings: (typeof window.collectAllAppSettings === 'function') ? window.collectAllAppSettings() : null,
                 timestamp: Date.now()
             };
             try {
@@ -4178,6 +4186,7 @@ async function uploadDataToCloud() {
                 const result = await response.json();
                 
                 if (response.ok && result.record.data) {
+                    if (result.record.settings) { try { window.applyAllAppSettings(result.record.settings); } catch (e) {} }
                     if (!syncView) {
                         // 【热重载魔法】：直接替换大脑数据，不刷新页面，实现0延迟顺滑更新！
                         const localData = JSON.parse(localStorage.getItem('unoInfinityPro') || '{}');
@@ -4191,11 +4200,12 @@ async function uploadDataToCloud() {
                         
                         statusBadge.textContent = "更新完成！";
                         statusBadge.classList.replace('text-gray-400', 'text-[#4ADE80]');
-                        
+
                         // 强行命令所有画笔重新画图，拒绝白屏刷新！
                         if(typeof updateViewRounds === 'function') updateViewRounds();
                         if(typeof recalculateStats === 'function') recalculateStats();
                         if(typeof updateAllUI === 'function') updateAllUI();
+                        if (typeof window.refreshAllSettingsUI === 'function') window.refreshAllSettingsUI();
                         
                     } else {
                         const incomingData = JSON.parse(result.record.data);
@@ -4207,10 +4217,11 @@ async function uploadDataToCloud() {
                         
                         statusBadge.textContent = "同步完成！";
                         statusBadge.classList.replace('text-gray-400', 'text-[#4ADE80]');
-                        
+
                         if(typeof updateViewRounds === 'function') updateViewRounds();
                         if(typeof recalculateStats === 'function') recalculateStats();
                         if(typeof updateAllUI === 'function') updateAllUI();
+                        if (typeof window.refreshAllSettingsUI === 'function') window.refreshAllSettingsUI();
                     }
                 } else {
                     throw new Error("数据格式错误");
@@ -5946,6 +5957,7 @@ wheelPlayers.forEach((p, i) => {
             }, 1000);
 
             loopSound(); // 启动滴滴声循环
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
 
         // 【暂停计时器】
@@ -5958,6 +5970,7 @@ wheelPlayers.forEach((p, i) => {
             const toggleBtn = document.getElementById('timerToggleBtn');
             toggleBtn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
             toggleBtn.classList.replace('bg-[#F59E0B]', 'bg-[#4ADE80]');
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
 
         // 【复位计时器】
@@ -5965,7 +5978,35 @@ wheelPlayers.forEach((p, i) => {
             stopTimer();
             timerRemain = timerTotal;
             updateTimerUI();
+            if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
         }
+
+        // 【副机按钮视觉同步】让玩家端倒计时/秒表的「播放·暂停」按钮图标与颜色与主机 100% 一致
+        function syncTimerControlVisuals() {
+            try {
+                const tb = document.getElementById('timerToggleBtn');
+                if (tb) {
+                    if (isTimerRunning) {
+                        tb.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                        tb.classList.add('bg-[#F59E0B]'); tb.classList.remove('bg-[#4ADE80]');
+                    } else {
+                        tb.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+                        tb.classList.add('bg-[#4ADE80]'); tb.classList.remove('bg-[#F59E0B]');
+                    }
+                }
+                const trb = document.getElementById('trToggleBtn');
+                if (trb) {
+                    if (trIsRunning) {
+                        trb.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                        trb.classList.add('bg-[#F59E0B]'); trb.classList.remove('bg-[#4ADE80]');
+                    } else {
+                        trb.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+                        trb.classList.add('bg-[#4ADE80]'); trb.classList.remove('bg-[#F59E0B]');
+                    }
+                }
+            } catch (e) {}
+        }
+        window.syncTimerControlVisuals = syncTimerControlVisuals;
 
         function initModuleToggles() {
             let hiddenModules = JSON.parse(localStorage.getItem('unoHiddenModules') || '[]');
@@ -6852,6 +6893,10 @@ window.__logoPanelHtml = function (ns, S, label) {
             '<span class="text-[10px] font-bold text-[#5E4B8B]">投影立体感</span>' +
             '<button onclick="window.toggleModuleLogoShadow(\'' + ns + '\')" class="' + (S.logoShadow ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + ' border-[2px] border-[#5E4B8B] rounded-full px-3 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">' + (S.logoShadow ? '开' : '关') + '</button>' +
         '</div>' +
+        '<div class="flex items-center gap-1 mt-1.5">' +
+            '<input id="logoUrl_' + ns + '" type="text" placeholder="图片URL地址" class="flex-1 min-w-0 px-1.5 py-1 text-[10px] border-[1.5px] border-[#5E4B8B] rounded-lg bg-white/80 text-[#5E4B8B] font-bold" style="outline:none;">' +
+            '<button onclick="window.loadModuleLogoFromUrl(\'' + ns + '\', document.getElementById(\'logoUrl_' + ns + '\').value)" class="shrink-0 bg-[#F59E0B] border-[2px] border-[#5E4B8B] rounded-lg py-1 px-2 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5"><i class="fa-solid fa-link mr-1"></i>载入</button>' +
+        '</div>' +
     '</div>';
 };
 window.__getLogoCtx = function (ns) {
@@ -6859,7 +6904,7 @@ window.__getLogoCtx = function (ns) {
         return {
             S: window.ovoSettings || {},
             slot: 'ovoLogoSlot', wrap: 'ovoTitleWrap', hideWrapWhenEmpty: true,
-            save: function () { try { localStorage.setItem('ovoSettings', JSON.stringify(window.ovoSettings)); } catch (e) {} },
+            save: function () { try { localStorage.setItem('ovoSettings', JSON.stringify(window.ovoSettings)); } catch (e) {} if (window.notifySettingsChanged) window.notifySettingsChanged(); },
             rerender: function () {
                 try { window.renderModuleLogo('ovo'); } catch (e) {}
                 try { if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena(); } catch (e) {}
@@ -6871,7 +6916,7 @@ window.__getLogoCtx = function (ns) {
         return {
             S: window.ssCapsuleSettings || {},
             slot: 'ssLogoSlot', wrap: 'ssTitleWrap', hideWrapWhenEmpty: false,
-            save: function () { try { localStorage.setItem('ssCapsuleSettings', JSON.stringify(window.ssCapsuleSettings)); } catch (e) {} },
+            save: function () { try { localStorage.setItem('ssCapsuleSettings', JSON.stringify(window.ssCapsuleSettings)); } catch (e) {} if (window.notifySettingsChanged) window.notifySettingsChanged(); },
             rerender: function () {
                 try { window.renderModuleLogo('ss'); } catch (e) {}
                 try { if (typeof renderSessionSection === 'function') renderSessionSection(); } catch (e) {}
@@ -6883,7 +6928,7 @@ window.__getLogoCtx = function (ns) {
         return {
             S: window.earnSettings || {},
             slot: 'earnLogoSlot', wrap: 'earnTitleWrap', hideWrapWhenEmpty: true,
-            save: function () { try { localStorage.setItem('earnSettings', JSON.stringify(window.earnSettings)); } catch (e) {} },
+            save: function () { try { localStorage.setItem('earnSettings', JSON.stringify(window.earnSettings)); } catch (e) {} if (window.notifySettingsChanged) window.notifySettingsChanged(); },
             rerender: function () {
                 try { window.renderModuleLogo('earn'); } catch (e) {}
                 try { if (typeof window.renderEarnings === 'function') window.renderEarnings(); } catch (e) {}
@@ -6985,6 +7030,118 @@ window.toggleModuleLogoShadow = function (ns) {
     ctx.S.logoShadow = ctx.S.logoShadow ? 0 : 1;
     ctx.save(); ctx.rerender(); ctx.repanel();
 };
+
+// ============================================================
+// 【新增】全量 UI 参数（含本地图片 LOGO）跨设备同步工具
+// 作用：让「玩家端 / 观众端」与主机在所有界面细节上完全一致
+// ============================================================
+(function () {
+    const SYNC_KEYS = ['ovoSettings', 'ovoViewMode', 'ssViewMode', 'ssCapsuleSettings',
+        'lsSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
+        'achSettings', 'customCardColor', 'unoHiddenModules', 'unoViewConfigs', 'activeAudienceView',
+        'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning',
+        'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols'];
+
+    // 把本机所有模块设置打包成对象（含 LOGO 的 dataURL 本地图片）
+    window.collectAllAppSettings = function () {
+        const out = {};
+        SYNC_KEYS.forEach(function (k) {
+            try {
+                const raw = localStorage.getItem(k);
+                if (raw === null) return;
+                try { out[k] = JSON.parse(raw); } catch (e) { out[k] = raw; }
+            } catch (e) {}
+        });
+        try { out.__theme__ = { bg: document.body.style.backgroundImage || '', cardColor: localStorage.getItem('customCardColor') || '', font: document.body.style.fontFamily || '' }; } catch (e) {}
+        return out;
+    };
+
+    // 把设置写回本机：localStorage + 内存中的模块设置对象，确保渲染用的是最新值
+    window.applyAllAppSettings = function (obj) {
+        if (!obj) return;
+        SYNC_KEYS.forEach(function (k) {
+            if (!(k in obj)) return;
+            try {
+                const v = obj[k];
+                if (v !== null && typeof v === 'object') localStorage.setItem(k, JSON.stringify(v));
+                else localStorage.setItem(k, String(v));
+            } catch (e) {}
+        });
+        // 同步内存对象（关键：否则渲染仍读旧值）
+        try { if (obj.ovoSettings) window.ovoSettings = Object.assign({}, obj.ovoSettings); } catch (e) {}
+        try { if (obj.earnSettings) window.earnSettings = Object.assign({}, obj.earnSettings); } catch (e) {}
+        try { if (obj.ssCapsuleSettings) window.ssCapsuleSettings = Object.assign({}, obj.ssCapsuleSettings); } catch (e) {}
+        try { if (obj.lsSettings) window.lsSettings = Object.assign({}, obj.lsSettings); } catch (e) {}
+        try { if (obj.rbSettings) window.rbSettings = Object.assign({}, obj.rbSettings); } catch (e) {}
+        try { if (obj.rtCapsuleSettings) window.rtCapsuleSettings = Object.assign({}, obj.rtCapsuleSettings); } catch (e) {}
+        try { if (obj.rsWheelSettings) window.rsWheelSettings = Object.assign({}, obj.rsWheelSettings); } catch (e) {}
+        try { if (obj.achSettings) window.achSettings = Object.assign({}, obj.achSettings); } catch (e) {}
+        try { if (obj.unoViewConfigs) window.unoViewConfigs = (typeof obj.unoViewConfigs === 'string' ? JSON.parse(obj.unoViewConfigs) : obj.unoViewConfigs); } catch (e) {}
+        try { if (obj.ovoViewMode) window.ovoViewMode = obj.ovoViewMode; } catch (e) {}
+        try { if (obj.ssViewMode) window.ssViewMode = obj.ssViewMode; } catch (e) {}
+        try { if (obj.earnViewMode) window.earnViewMode = obj.earnViewMode; } catch (e) {}
+        try { if (obj.activeAudienceView) window.activeAudienceView = obj.activeAudienceView; } catch (e) {}
+        try { if (obj.unoHiddenModules) window.unoHiddenModules = (typeof obj.unoHiddenModules === 'string' ? JSON.parse(obj.unoHiddenModules) : obj.unoHiddenModules); } catch (e) {}
+        try { if (obj.customCardColor) window.customCardColor = obj.customCardColor; } catch (e) {}
+        try { if (obj.imgLibCollapsed) window.imgLibCollapsed = obj.imgLibCollapsed; } catch (e) {}
+        try { if (obj.cipCat) window.cipCat = obj.cipCat; } catch (e) {}
+        try { if (obj.cipCols) window.cipCols = obj.cipCols; } catch (e) {}
+        // 主题（背景 / 字体）
+        try {
+            if (obj.__theme__) {
+                if (obj.__theme__.bg) document.body.style.backgroundImage = obj.__theme__.bg;
+                if (obj.__theme__.font) document.body.style.fontFamily = obj.__theme__.font;
+                if (obj.__theme__.cardColor) { try { localStorage.setItem('customCardColor', obj.__theme__.cardColor); } catch (e) {} window.customCardColor = obj.__theme__.cardColor; }
+            }
+        } catch (e) {}
+    };
+
+    // 主机改了设置后，防抖广播给所有副机（含 LOGO 图片）
+    let _settingsSyncTimer = null;
+    window.notifySettingsChanged = function () {
+        if (typeof myRole === 'undefined' || myRole !== 'host' || typeof mqttClient === 'undefined' || !mqttClient) return;
+        if (_settingsSyncTimer) clearTimeout(_settingsSyncTimer);
+        _settingsSyncTimer = setTimeout(function () {
+            try {
+                mqttClient.publish('uno_room_' + roomCode, JSON.stringify({
+                    action: 'SETTINGS_SYNC',
+                    settings: window.collectAllAppSettings()
+                }));
+            } catch (e) {}
+        }, 300);
+    };
+
+    // 应用设置后，刷新所有依赖设置的界面
+    window.refreshAllSettingsUI = function () {
+        try { if (window.__rebuildOvoPanel) window.__rebuildOvoPanel(); } catch (e) {}
+        try { if (window.__rebuildSsPanel) window.__rebuildSsPanel(); } catch (e) {}
+        try { if (window.__rebuildEarnPanel) window.__rebuildEarnPanel(); } catch (e) {}
+        try { window.renderModuleLogo('ovo'); } catch (e) {}
+        try { window.renderModuleLogo('ss'); } catch (e) {}
+        try { window.renderModuleLogo('earn'); } catch (e) {}
+        try { if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena(); } catch (e) {}
+        try { if (typeof renderSessionSection === 'function') renderSessionSection(); } catch (e) {}
+        try { if (typeof window.renderEarnings === 'function') window.renderEarnings(); } catch (e) {}
+        try { if (typeof updateAllUI === 'function') updateAllUI(); } catch (e) {}
+    };
+
+    // 通过 URL 地址载入模块 LOGO（支持 http/https 直链或 data: 图片）
+    window.loadModuleLogoFromUrl = function (ns, url) {
+        const ctx = window.__getLogoCtx(ns);
+        if (!ctx) return;
+        url = (url || '').toString().trim();
+        if (!url) { if (typeof alert === 'function') alert('请输入图片 URL 地址'); return; }
+        if (!/^https?:\/\//i.test(url) && !/^data:image\//i.test(url)) {
+            if (typeof alert === 'function') alert('请输入以 http:// 或 https:// 开头的图片地址（或直接粘贴 data:image/... 链接）');
+            return;
+        }
+        ctx.S.logoData = url;
+        ctx.S.logoShow = 1;
+        ctx.save(); ctx.rerender(); ctx.repanel();
+        if (window.notifySettingsChanged) window.notifySettingsChanged();
+    };
+})();
+
 setTimeout(function () {
     try { window.renderModuleLogo('ovo'); } catch (e) {}
     try { window.renderModuleLogo('ss'); } catch (e) {}
@@ -7439,6 +7596,17 @@ setTimeout(function () {
         editCardRadius: 16, editCardPad: 10, editGap: 10, editRowH: 40, editRowGap: 6, editCardBorder: 3,
         editAvatarSize: 30, editNameSize: 13, editTitleSize: 14, editSubSize: 11,
         inputW: 84, inputH: 34, inputFontSize: 15, inputRadius: 10, inputBorder: 3,
+        // 编辑图·头部胶囊
+        headerRowGap: 4, pillGapX: 6, row2GapX: 6,
+        titlePillH: 24, titlePillRadius: 12,
+        datePillH: 20, datePillRadius: 10,
+        rangePillH: 20, rangePillRadius: 10,
+        winPillH: 20, winPillRadius: 10, winPillFont: 11,
+        luckTagH: 20, luckTagFont: 11,
+        // 编辑图·文字描边/加粗
+        wNameStroke: 1, loserNameStroke: 1,
+        scoreSize: 13, scoreStroke: 1, scoreBold: 1,
+        editRowInGap: 6, sumLabelH: 18, sumFont: 13,
         // 开关
         theme: 0,         showRank: 1, showAvatar: 1, showBar: 1, showWins: 1, showZero: 1, editNewFirst: 1,
         // 标题 LOGO
@@ -7454,9 +7622,9 @@ setTimeout(function () {
         { name: '紫盈粉亏', pos: '#8B5CF6', neg: '#EC4899', barPos: '#C4B5FD', barNeg: '#F9A8D4' }
     ];
 
-    // ===== 设置面板滑块清单（分组显示，默认全部锁定，防止滚动误触）=====
+    // ===== 设置面板滑块清单（按视图过滤：view=main 仅主视图 / edit 仅编辑图 / both 通用）=====
     const EARN_SLIDERS = [
-        { group: '榜单卡片', items: [
+        { view: 'main', group: '榜单卡片', items: [
             { key: 'cardMaxWidth', label: '榜单最大宽度', min: 280, max: 760, def: 520, unit: 'px' },
             { key: 'cardRadius',   label: '榜单圆角',     min: 0,  max: 40, def: 18, unit: 'px' },
             { key: 'cardBorder',   label: '榜单边框粗细', min: 0,  max: 8,  def: 3,  unit: 'px' },
@@ -7465,7 +7633,7 @@ setTimeout(function () {
             { key: 'cardOpacity',  label: '榜单不透明度', min: 20, max: 100, def: 100, unit: '%' },
             { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' }
         ]},
-        { group: '收益条', items: [
+        { view: 'main', group: '收益条', items: [
             { key: 'rowH',       label: '条高度',       min: 34, max: 110, def: 54, unit: 'px' },
             { key: 'rowRadius',  label: '条圆角',       min: 0,  max: 34,  def: 14, unit: 'px' },
             { key: 'rowPadX',    label: '条左右内边距', min: 0,  max: 30,  def: 10, unit: 'px' },
@@ -7473,28 +7641,28 @@ setTimeout(function () {
             { key: 'rowBorder',  label: '条边框粗细',   min: 0,  max: 6,   def: 2,  unit: 'px' },
             { key: 'rowOpacity', label: '条底色不透明度', min: 20, max: 100, def: 100, unit: '%' }
         ]},
-        { group: '名次胶囊', items: [
+        { view: 'main', group: '名次胶囊', items: [
             { key: 'rankCapW',      label: '名次胶囊宽',   min: 18, max: 70, def: 30, unit: 'px' },
             { key: 'rankCapH',      label: '名次胶囊高',   min: 18, max: 70, def: 30, unit: 'px' },
             { key: 'rankCapRadius', label: '名次胶囊圆角', min: 0,  max: 35, def: 15, unit: 'px' },
             { key: 'rankNumSize',   label: '名次数字大小', min: 9,  max: 34, def: 15, unit: 'px' },
             { key: 'rankGap',       label: '名次与头像间距', min: 0, max: 30, def: 8, unit: 'px' }
         ]},
-        { group: '头像（悬浮）', items: [
+        { view: 'main', group: '头像（悬浮）', items: [
             { key: 'avatarSize',    label: '头像大小',     min: 20, max: 110, def: 44, unit: 'px' },
             { key: 'avatarOutline', label: '头像白边宽度', min: 0,  max: 5,  def: 2,  unit: 'px' },
             { key: 'avatarLift',    label: '向上悬浮高度', min: 0,  max: 40, def: 12, unit: 'px' },
             { key: 'avatarX',       label: '水平偏移',     min: -30, max: 30, def: 0, unit: 'px' },
             { key: 'avatarGap',     label: '头像与名字间距', min: 0, max: 30, def: 8, unit: 'px' }
         ]},
-        { group: '文字', items: [
+        { view: 'main', group: '文字', items: [
             { key: 'nameSize',  label: '玩家名字大小', min: 9,  max: 34, def: 15, unit: 'px' },
             { key: 'numSize',   label: '金额数字大小', min: 12, max: 44, def: 20, unit: 'px' },
             { key: 'subSize',   label: '副文字大小',   min: 8,  max: 24, def: 11, unit: 'px' },
             { key: 'numStroke', label: '数字描边宽度', min: 0,  max: 5, step: 0.5, def: 1.5, unit: 'px' },
             { key: 'nameGap',   label: '名字与金额间距', min: 0, max: 20, def: 4, unit: 'px' }
         ]},
-        { group: '胜局胶囊', items: [
+        { view: 'main', group: '胜局胶囊', items: [
             { key: 'winsPillH',      label: '胜局胶囊高',     min: 16, max: 60, def: 26, unit: 'px' },
             { key: 'winsPillPadX',   label: '胜局胶囊内边距', min: 0,  max: 24, def: 10, unit: 'px' },
             { key: 'winsPillRadius', label: '胜局胶囊圆角',   min: 0,  max: 30, def: 14, unit: 'px' },
@@ -7503,7 +7671,7 @@ setTimeout(function () {
             { key: 'winsStroke',     label: '胜局文字描边',   min: 0,  max: 4, step: 0.5, def: 1, unit: 'px' },
             { key: 'winsGap',        label: '金额与胜局间距', min: 0,  max: 30, def: 6,  unit: 'px' }
         ]},
-        { group: '编辑图·轮次卡片', items: [
+        { view: 'edit', group: '编辑图·轮次卡片', items: [
             { key: 'editCardRadius',  label: '场次卡片圆角',   min: 0,  max: 36, def: 16, unit: 'px' },
             { key: 'editCardBorder',  label: '场次卡片边框',   min: 0,  max: 8,  def: 3,  unit: 'px' },
             { key: 'editCardPad',     label: '场次卡片内边距', min: 0,  max: 30, def: 10, unit: 'px' },
@@ -7515,14 +7683,38 @@ setTimeout(function () {
             { key: 'editTitleSize',   label: '场次标题大小',   min: 10, max: 32, def: 14, unit: 'px' },
             { key: 'editSubSize',     label: '结算文字大小',   min: 8,  max: 26, def: 11, unit: 'px' }
         ]},
-        { group: '编辑图·输入框', items: [
+        { view: 'edit', group: '编辑图·头部胶囊', items: [
+            { key: 'headerRowGap',  label: '头部两行间距',   min: 0,  max: 20, def: 4,  unit: 'px' },
+            { key: 'pillGapX',      label: '行内胶囊间距',   min: 0,  max: 24, def: 6,  unit: 'px' },
+            { key: 'row2GapX',      label: '行2元素间距',    min: 0,  max: 24, def: 6,  unit: 'px' },
+            { key: 'titlePillH',    label: '轮次胶囊高',     min: 16, max: 44, def: 24, unit: 'px' },
+            { key: 'titlePillRadius', label: '轮次胶囊圆角', min: 0,  max: 24, def: 12, unit: 'px' },
+            { key: 'datePillH',     label: '日期胶囊高',     min: 14, max: 36, def: 20, unit: 'px' },
+            { key: 'datePillRadius',label: '日期胶囊圆角',   min: 0,  max: 24, def: 10, unit: 'px' },
+            { key: 'rangePillH',    label: '局范围胶囊高',   min: 14, max: 36, def: 20, unit: 'px' },
+            { key: 'rangePillRadius', label: '局范围胶囊圆角', min: 0, max: 24, def: 10, unit: 'px' },
+            { key: 'winPillH',      label: '赢胶囊高',       min: 14, max: 36, def: 20, unit: 'px' },
+            { key: 'winPillRadius', label: '赢胶囊圆角',     min: 0,  max: 24, def: 10, unit: 'px' },
+            { key: 'luckTagH',      label: '赌赢标签高',     min: 14, max: 36, def: 20, unit: 'px' }
+        ]},
+        { view: 'edit', group: '编辑图·文字描边/加粗', items: [
+            { key: 'wNameStroke',    label: '赢家名字描边', min: 0, max: 4, step: 0.5, def: 1, unit: 'px' },
+            { key: 'loserNameStroke',label: '输家名字描边', min: 0, max: 4, step: 0.5, def: 1, unit: 'px' },
+            { key: 'scoreSize',      label: '得数字号',     min: 9, max: 30, def: 13, unit: 'px' },
+            { key: 'scoreStroke',    label: '得分描边',     min: 0, max: 4, step: 0.5, def: 1, unit: 'px' },
+            { key: 'scoreBold',      label: '得分加粗(1开0关)', min: 0, max: 1, step: 1, def: 1 },
+            { key: 'editRowInGap',   label: '输家行内间距', min: 0, max: 24, def: 6,  unit: 'px' },
+            { key: 'sumLabelH',      label: '收标签高',     min: 12, max: 30, def: 18, unit: 'px' },
+            { key: 'sumFont',        label: '收益字号',     min: 9, max: 30, def: 13, unit: 'px' }
+        ]},
+        { view: 'edit', group: '编辑图·输入框', items: [
             { key: 'inputW',        label: '输入框宽度',   min: 50, max: 200, def: 84, unit: 'px' },
             { key: 'inputH',        label: '输入框高度',   min: 24, max: 70,  def: 34, unit: 'px' },
             { key: 'inputFontSize', label: '输入数字大小', min: 10, max: 34,  def: 15, unit: 'px' },
             { key: 'inputRadius',   label: '输入框圆角',   min: 0,  max: 24,  def: 10, unit: 'px' },
             { key: 'inputBorder',   label: '输入框边框',   min: 0,  max: 6,   def: 3,  unit: 'px' }
         ]},
-        { group: '标题LOGO（替换文字标题）', items: [
+        { view: 'both', group: '标题LOGO（替换文字标题）', items: [
             { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
             { key: 'titleGap',    label: 'LOGO与内容间距', min: 0,    max: 40,  def: 12,  unit: 'px' },
             { key: 'logoW',       label: 'LOGO宽度',       min: 30,   max: 420, def: 170, unit: 'px' },
@@ -7616,7 +7808,17 @@ setTimeout(function () {
         try { winnerId = (earnData().winners && earnData().winners[key] != null) ? String(earnData().winners[key]) : null; } catch (e) {}
         if (!winnerId || !part[winnerId]) winnerId = earnAutoWinner(cycle);
         const losers = Object.keys(part).filter(function (id) { return id !== winnerId; });
-        return { key: key, firstR: cycle.firstR, lastR: cycle.lastR, winnerId: winnerId, losers: losers, participants: Object.keys(part) };
+        // 每位玩家在本轮次的「实时结算得分」= 覆盖各局 r.changes 求和；与收益榜录入数值是两套独立数据
+        const scores = {};
+        Object.keys(part).forEach(function (id) {
+            let s = 0;
+            cycle.rounds.forEach(function (r) {
+                const c = (r.changes && r.changes[String(id)] !== undefined) ? Number(r.changes[String(id)]) : 0;
+                s += c;
+            });
+            scores[String(id)] = s;
+        });
+        return { key: key, firstR: cycle.firstR, lastR: cycle.lastR, winnerId: winnerId, losers: losers, participants: Object.keys(part), scores: scores, date: (cycle.session && cycle.session.date !== undefined && cycle.session.date !== null) ? String(cycle.session.date) : '' };
     };
     const earnGet = function (key, pid) {
         const e = earnData().entries[key];
@@ -7652,6 +7854,18 @@ setTimeout(function () {
     const themeOf = function () { return EARN_THEMES[window.earnSettings.theme] || EARN_THEMES[0]; };
     const colorOf = function (v) { const t = themeOf(); return v > 0 ? t.pos : (v < 0 ? t.neg : '#5E4B8B'); };
     const numStrokeCss = function (w) { return w > 0 ? '-webkit-text-stroke:' + w + 'px #5E4B8B;paint-order:stroke fill;' : ''; };
+    // 得分配色（与收益数值颜色独立）：正分 70bf30/描边085c00；负分 ff2534/描边9c0a00
+    const earnScoreCss = function (v) {
+        return (Number(v) || 0) < 0
+            ? 'color:#ff2534;-webkit-text-stroke:1px #9c0a00;paint-order:stroke fill;'
+            : 'color:#70bf30;-webkit-text-stroke:1px #085c00;paint-order:stroke fill;';
+    };
+    // 场次日期展示：8位数字(如20261030)转成 2026.10.30，其余原样
+    const earnFmtDate = function (d) {
+        const s = (d === undefined || d === null) ? '' : String(d);
+        const m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+        return m ? (m[1] + '.' + m[2] + '.' + m[3]) : s;
+    };
     const hexToRgba = function (hex, a) {
         let h = String(hex || '').trim();
         if (h.charAt(0) === '#') h = h.slice(1);
@@ -7741,31 +7955,11 @@ setTimeout(function () {
         return '<div class="w-full flex flex-col items-center" style="gap:' + S.rowGap + 'px;max-width:' + S.cardMaxWidth + 'px;">' + rows + '</div>';
     };
 
-    // ===== 编辑图：单轮次「本场得分排名」（列出该轮次参与者、各自本场得分、按得分降序，实时刷新）=====
-    const cycleRankRows = function (info) {
-        const S = window.earnSettings;
-        const part = info.participants || [];
-        if (!part.length) return '';
-        const list = part.map(function (id) {
-            let v = 0;
-            if (info.winnerId && String(id) === String(info.winnerId)) v = earnCycleSum(info);
-            else v = -earnGet(info.key, id);
-            return { id: String(id), v: v };
-        });
-        list.sort(function (a, b) { return b.v - a.v; });
-        return list.map(function (x, idx) {
-            const p = nameOf(x.id);
-            if (!p) return '';
-            const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : (idx + 1)));
-            return '<div class="w-full flex items-center justify-between" style="min-height:28px;padding:1px 4px;background:' + (idx % 2 ? 'rgba(94,75,139,0.06)' : 'transparent') + ';border-radius:7px;">' +
-                '<div class="flex items-center gap-1.5 min-w-0">' +
-                    '<span class="font-black shrink-0" style="font-size:12px;width:18px;text-align:center;">' + medal + '</span>' +
-                    sticker(avatarImg(p, 20), 1) +
-                    '<span class="font-black truncate" style="font-size:11px;color:' + p.color + ';' + numStrokeCss(1) + '">' + p.name + '</span>' +
-                '</div>' +
-                '<span class="font-black shrink-0" style="font-size:12px;color:' + colorOf(x.v) + ';' + numStrokeCss(1) + '">' + moneyText(x.v) + '</span>' +
-            '</div>';
-        }).join('');
+    // ===== 编辑图：轮次卡片折叠状态（默认全部折叠，点击卡片头部展开/收起）=====
+    const earnExpanded = {};
+    window.__earnToggleCyc = function (cycKey) {
+        earnExpanded[cycKey] = !earnExpanded[cycKey];
+        try { window.renderEarnings(); } catch (e) {}
     };
 
     // ===== 编辑图：按场次录入输家数值 =====
@@ -7783,52 +7977,83 @@ setTimeout(function () {
             const cycKey = info.key;
             const w = info.winnerId ? nameOf(info.winnerId) : null;
             const sum = info.winnerId ? earnCycleSum(info) : 0;
-            const loserRows = info.losers.map(function (pid) {
+            // 行按「轮次内实时结算得分」降序排名；得分与下方录入的收益数值完全独立
+            const rankLosers = info.losers.slice().sort(function (a, b) {
+                const sa = (info.scores && info.scores[String(a)] !== undefined) ? info.scores[String(a)] : 0;
+                const sb = (info.scores && info.scores[String(b)] !== undefined) ? info.scores[String(b)] : 0;
+                return sb - sa;
+            });
+            const loserRows = rankLosers.map(function (pid) {
                 const p = nameOf(pid);
                 if (!p) return '';
                 const e = earnData().entries[cycKey];
                 const val = (e && e[String(pid)] !== undefined && e[String(pid)] !== null && e[String(pid)] !== '') ? e[String(pid)] : '';
+                const sc = (info.scores && info.scores[String(pid)] !== undefined) ? info.scores[String(pid)] : 0;
+                const scStyle = 'font-size:' + S.scoreSize + 'px;font-weight:' + (S.scoreBold ? 900 : 700) + ';line-height:1;white-space:nowrap;' + earnScoreCss(sc);
                 return '' +
-                '<div class="w-full flex items-center justify-between" style="min-height:' + S.editRowH + 'px;">' +
-                    '<div class="flex items-center gap-2 min-w-0">' +
+                '<div class="w-full flex items-center" style="min-height:' + S.editRowH + 'px;gap:' + S.editRowInGap + 'px;">' +
+                    '<div class="flex items-center gap-2 min-w-0" style="flex:0 1 auto;">' +
                         sticker(avatarImg(p, S.editAvatarSize), Math.min(S.avatarOutline, 3)) +
-                        '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + p.color + ';' + numStrokeCss(1) + '">' + p.name + '</span>' +
+                        '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + p.color + ';' + numStrokeCss(S.loserNameStroke) + '">' + p.name + '</span>' +
                         '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">输</span>' +
+                    '</div>' +
+                    '<div class="min-w-0" style="flex:1 1 0;display:flex;justify-content:center;align-items:center;">' +
+                        '<span class="font-black" data-earn-score="' + cycKey + '|' + pid + '" style="' + scStyle + '">' + fmt(sc) + '<span style="font-size:' + S.editSubSize + 'px;">分</span></span>' +
                     '</div>' +
                     '<input type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + val + '" ' +
                         'oninput="window.earnInput(\'' + cycKey + '\',\'' + pid + '\',this.value)" ' +
-                        'style="width:' + S.inputW + 'px;height:' + S.inputH + 'px;font-size:' + S.inputFontSize + 'px;' +
+                        'style="width:' + S.inputW + 'px;height:' + S.inputH + 'px;font-size:' + S.inputFontSize + 'px;flex-shrink:0;' +
                         'border:' + S.inputBorder + 'px solid #5E4B8B;border-radius:' + S.inputRadius + 'px;text-align:center;' +
                         'font-weight:900;color:#5E4B8B;background:#FFFDF5;outline:none;box-sizing:border-box;">' +
                 '</div>';
             }).join('');
 
+            // 编号按时间顺序：最老的场次 = 第1轮次（与显示顺序无关）
+            const cycNum = totals.infos.indexOf(info) + 1;
+            const isOpen = !!earnExpanded[cycKey];
+            const wScore = (info.winnerId && info.scores && info.scores[String(info.winnerId)] !== undefined) ? info.scores[String(info.winnerId)] : 0;
+            // 「赌赢」标签：该轮次内只有一位玩家是正分时贴上
+            const posCount = Object.keys(info.scores || {}).filter(function (id) { return Number(info.scores[id]) > 0; }).length;
+            const luckyTag = posCount === 1 ?
+                '<span class="font-black shrink-0 flex items-center justify-center" style="height:' + S.luckTagH + 'px;padding:0 8px;background:#f6e243;border:2px solid #cc7c00;border-radius:10px;font-size:' + S.luckTagFont + 'px;color:#cc7c00;line-height:1;">赌赢</span>' : '';
+            const wScStyle = 'font-size:' + S.scoreSize + 'px;font-weight:' + (S.scoreBold ? 900 : 700) + ';line-height:1;white-space:nowrap;' + earnScoreCss(wScore);
             return '' +
             '<div class="w-full" style="max-width:' + S.cardMaxWidth + 'px;box-sizing:border-box;background:rgba(255,255,255,0.94);' +
                 'border:' + S.editCardBorder + 'px solid #5E4B8B;border-radius:' + S.editCardRadius + 'px;padding:' + S.editCardPad + 'px;">' +
-                '<div class="w-full flex items-center justify-between" style="margin-bottom:6px;">' +
-                    '<div class="flex items-center gap-2 min-w-0">' +
-                        '<span class="font-black text-white shrink-0 flex items-center justify-center" style="height:26px;padding:0 10px;background:#5E4B8B;border-radius:13px;font-size:' + S.editTitleSize + 'px;line-height:1;">第 ' + (idx + 1) + ' 轮次</span>' +
-                        '<span class="font-black shrink-0" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">（第' + info.firstR + '–' + info.lastR + '局）</span>' +
-                        (w ?
-                            '<div class="flex items-center gap-1 min-w-0">' +
-                                sticker(avatarImg(w, S.editAvatarSize), Math.min(S.avatarOutline, 3)) +
-                                '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + th.pos + ';' + numStrokeCss(1) + '">' + w.name + '</span>' +
-                                '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#5E4B8B;">赢</span>' +
-                            '</div>'
-                            : '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无赢家</span>') +
+                '<div class="w-full flex flex-col" style="gap:' + S.headerRowGap + 'px;' + (isOpen ? 'margin-bottom:6px;' : '') + 'cursor:pointer;user-select:none;-webkit-user-select:none;" onclick="window.__earnToggleCyc(\'' + cycKey + '\')">' +
+                    // 第一行：轮次编号 + 日期 + 局范围 + 折叠箭头 + 清空
+                    '<div class="w-full flex items-center justify-between" style="gap:' + S.row2GapX + 'px;">' +
+                        '<div class="flex items-center min-w-0" style="gap:' + S.pillGapX + 'px;flex-wrap:wrap;">' +
+                            '<span class="font-black text-white shrink-0 flex items-center justify-center" style="height:' + S.titlePillH + 'px;padding:0 10px;background:#5E4B8B;border-radius:' + S.titlePillRadius + 'px;font-size:' + S.editTitleSize + 'px;line-height:1;">第 ' + cycNum + ' 轮次</span>' +
+                            (info.date ? '<span class="font-black shrink-0 flex items-center justify-center" style="height:' + S.datePillH + 'px;padding:0 8px;background:#E0F2FE;border-radius:' + S.datePillRadius + 'px;font-size:' + S.editSubSize + 'px;color:#0369A1;line-height:1;">' + earnFmtDate(info.date) + '</span>' : '') +
+                            '<span class="font-black shrink-0 flex items-center justify-center" style="height:' + S.rangePillH + 'px;padding:0 8px;background:#EDE9FE;border-radius:' + S.rangePillRadius + 'px;font-size:' + S.editSubSize + 'px;color:#5E4B8B;line-height:1;">第' + info.firstR + '–' + info.lastR + '局</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-1 shrink-0">' +
+                            '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#5E4B8B;">' + (isOpen ? '▼' : '▶') + '</span>' +
+                            '<button onclick="event.stopPropagation();window.earnClearCycle(\'' + cycKey + '\')" title="清空本轮次" class="flex items-center justify-center" style="width:24px;height:24px;background:#F87171;border:2px solid #5E4B8B;border-radius:8px;color:#fff;font-size:11px;font-weight:900;line-height:1;">✕</button>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="flex items-center gap-1 shrink-0">' +
-                        '<span class="font-black" data-earn-sum="' + cycKey + '" style="font-size:' + S.editNameSize + 'px;color:' + (sum > 0 ? th.pos : '#5E4B8B') + ';' + numStrokeCss(1) + '">' + (info.winnerId ? moneyText(sum) : '-') + '</span>' +
-                        '<button onclick="window.earnClearCycle(\'' + cycKey + '\')" title="清空本轮次" class="flex items-center justify-center" style="width:24px;height:24px;background:#F87171;border:2px solid #5E4B8B;border-radius:8px;color:#fff;font-size:11px;font-weight:900;line-height:1;">✕</button>' +
+                    // 第二行：赢家 + 得分 + 赌赢标签 ｜ 收益合计
+                    '<div class="w-full flex items-center justify-between" style="gap:' + S.row2GapX + 'px;">' +
+                        (w ?
+                            '<div class="flex items-center min-w-0" style="gap:' + S.pillGapX + 'px;flex-wrap:wrap;">' +
+                                '<div class="flex items-center gap-1 min-w-0">' +
+                                    sticker(avatarImg(w, S.editAvatarSize), Math.min(S.avatarOutline, 3)) +
+                                    '<span class="font-black truncate" style="font-size:' + S.editNameSize + 'px;color:' + w.color + ';' + numStrokeCss(S.wNameStroke) + '">' + w.name + '</span>' +
+                                    '<span class="font-black shrink-0 flex items-center justify-center" style="height:' + S.winPillH + 'px;padding:0 8px;background:' + th.pos + ';border-radius:' + S.winPillRadius + 'px;font-size:' + S.editSubSize + 'px;color:#FFFFFF;line-height:1;">赢</span>' +
+                                    '<span class="font-black shrink-0" data-earn-score="' + cycKey + '|' + info.winnerId + '" style="' + wScStyle + '">' + fmt(wScore) + '<span style="font-size:' + S.editSubSize + 'px;">分</span></span>' +
+                                '</div>' +
+                                luckyTag +
+                            '</div>'
+                            : '<div class="flex items-center min-w-0">' + luckyTag + '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无赢家</span></div>') +
+                        '<div class="flex items-center gap-1 shrink-0">' +
+                            '<span class="font-black shrink-0 flex items-center justify-center" style="height:' + S.sumLabelH + 'px;padding:0 6px;background:#F1F5F9;border-radius:9px;font-size:' + S.editSubSize + 'px;color:#64748B;line-height:1;">收</span>' +
+                            '<span class="font-black" data-earn-sum="' + cycKey + '" style="font-size:' + S.sumFont + 'px;color:' + (sum > 0 ? th.pos : '#5E4B8B') + ';' + numStrokeCss(S.loserNameStroke) + '">' + (info.winnerId ? moneyText(sum) : '-') + '</span>' +
+                        '</div>' +
                     '</div>' +
                 '</div>' +
-                '<div class="w-full flex flex-col" style="gap:' + S.editRowGap + 'px;">' + (loserRows || '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无输家</span>') + '</div>' +
-                (info.participants && info.participants.length ?
-                '<div class="w-full" style="margin-top:' + S.editRowGap + 'px;background:rgba(94,75,139,0.05);border:1px dashed #5E4B8B;border-radius:10px;padding:6px 8px;">' +
-                    '<div class="font-black" style="font-size:' + S.editSubSize + 'px;color:#5E4B8B;margin-bottom:2px;">本场得分排名（按得分降序）</div>' +
-                    '<div class="w-full flex flex-col" style="gap:1px;" data-earn-crank-list="' + cycKey + '">' + cycleRankRows(info) + '</div>' +
-                '</div>'
+                (isOpen ?
+                '<div class="w-full flex flex-col" style="gap:' + S.editRowGap + 'px;">' + (loserRows || '<span class="font-black" style="font-size:' + S.editSubSize + 'px;color:#94A3B8;">本轮次无输家</span>') + '</div>'
                 : '') +
             '</div>';
         }).join('');
@@ -7869,16 +8094,6 @@ setTimeout(function () {
                     bar.style.background = v > 0 ? th.barPos : (v < 0 ? th.barNeg : '#E5E7EB');
                 }
             });
-        } catch (e) {}
-        try {
-            if (window.earnViewMode === 'edit') {
-                document.querySelectorAll('[data-earn-crank-list]').forEach(function (el) {
-                    const cycKey = el.getAttribute('data-earn-crank-list');
-                    let info = null;
-                    for (let i = 0; i < totals.infos.length; i++) if (String(totals.infos[i].key) === String(cycKey)) { info = totals.infos[i]; break; }
-                    if (info) el.innerHTML = cycleRankRows(info);
-                });
-            }
         } catch (e) {}
     };
 
@@ -7927,6 +8142,18 @@ setTimeout(function () {
         } catch (e) {}
     };
 
+    // 轮次顺序：val=1 倒序(最新轮次在最上) / val=0 正序(第1轮次在最上)
+    window.earnSetOrder = function (v) {
+        window.earnSettings.editNewFirst = v ? 1 : 0;
+        try { saveEarnSettings(); } catch (e) {}
+        try { window.renderEarnings(); } catch (e) {}
+        try {
+            const a = document.getElementById('earnOrderAsc'), d = document.getElementById('earnOrderDesc');
+            if (a) a.style.background = v ? '#94A3B8' : '#4ADE80';
+            if (d) d.style.background = v ? '#4ADE80' : '#94A3B8';
+        } catch (e) {}
+    };
+
     // ===== 设置面板（首次打开才生成）=====
     let earnPanelBuilt = false;
     const buildEarnPanel = function () {
@@ -7943,7 +8170,8 @@ setTimeout(function () {
         '</div>' +
         '<div class="arm-hint mb-2">提示：点亮某个分类胶囊（变绿）后才能拖动该组滑块；点灭（变灰）即锁定，滚动页面不会误改参数。</div>';
 
-        const flagRow = function (key, label) {
+        const flagRow = function (key, label, view) {
+            if (view && view !== window.earnViewMode) return '';
             return '<div class="flex items-center justify-between mt-1 bg-[#F3F0FA] border-[1.5px] border-[#5E4B8B] rounded-lg px-2 py-1">' +
                 '<span class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">' + label + '</span>' +
                 '<button onclick="window.toggleEarnFlag(\'' + key + '\')" class="border-[2px] border-[#5E4B8B] rounded-full px-3 py-0.5 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none ' + (S[key] ? 'bg-[#4ADE80]' : 'bg-[#94A3B8]') + '">' + (S[key] ? '开' : '关') + '</button>' +
@@ -7951,6 +8179,7 @@ setTimeout(function () {
         };
 
         EARN_SLIDERS.forEach(function (g) {
+            if (g.view && g.view !== window.earnViewMode) return; // 仅显示当前视图的参数
             const gk = g.group;
             const armed = window.getGroupArmed('earn', gk);
             html += '<div class="slider-group" data-panel="earn" data-gi="' + gk + '" data-armed="' + armed + '">' +
@@ -7980,6 +8209,17 @@ setTimeout(function () {
                 viewBtn('main', '主视图', 'fa-ranking-star') +
                 viewBtn('edit', '编辑图', 'fa-pen-to-square') +
             '</div>';
+        // 轮次顺序：正序(最老→最新，第1轮次在最上) / 倒序(最新在最上)
+        const orderBtn = function (val, txt, icon, id) {
+            const on = (S.editNewFirst ? 1 : 0) === val;
+            return '<button id="' + id + '" onclick="window.earnSetOrder(' + val + ')" class="flex-1 flex items-center justify-center gap-1 border-[2px] border-[#5E4B8B] rounded-full font-black text-white shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all py-1" ' +
+                'style="font-size:11px;background:' + (on ? '#4ADE80' : '#94A3B8') + ';"><i class="fa-solid ' + icon + '"></i>' + txt + '</button>';
+        };
+        html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">轮次顺序</div>' +
+            '<div class="flex items-center gap-2">' +
+                orderBtn(0, '正序↑', 'fa-arrow-up-wide-short', 'earnOrderAsc') +
+                orderBtn(1, '倒序↓', 'fa-arrow-down-wide-short', 'earnOrderDesc') +
+            '</div>';
         html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">配色主题</div>' +
             '<div class="grid grid-cols-2 gap-1">' +
             EARN_THEMES.map(function (t, i) {
@@ -7987,11 +8227,11 @@ setTimeout(function () {
             }).join('') + '</div>';
 
         html += '<div class="font-black text-[#5E4B8B] text-[10px] sm:text-xs mt-3 mb-1 bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-full px-2 py-0.5 inline-block">显示开关</div>' +
-            flagRow('showRank', '显示名次胶囊') +
-            flagRow('showAvatar', '显示玩家头像') +
-            flagRow('showWins', '显示胜局胶囊') +
-            flagRow('showZero', '显示零收益玩家') +
-            flagRow('editNewFirst', '编辑图：最新轮次在最上');
+            flagRow('showRank', '显示名次胶囊', 'main') +
+            flagRow('showAvatar', '显示玩家头像', 'main') +
+            flagRow('showWins', '显示胜局胶囊', 'main') +
+            flagRow('showZero', '显示零收益玩家', 'main') +
+            flagRow('editNewFirst', '编辑图：默认展开最新轮次', 'edit');
 
         html += '<div class="flex items-center justify-between mt-1 bg-[#F3F0FA] border-[1.5px] border-[#5E4B8B] rounded-lg px-2 py-1">' +
             '<span class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">金额符号</span>' +
@@ -11525,6 +11765,7 @@ els.playerList.addEventListener('input', e => {
             const timerResetBtn = document.getElementById('timerResetBtn');
 
             timerSetBtn.onclick = () => {
+                if (myRole === 'client') return;
                 let val = parseInt(timerSetMin.value);
                 if (!isNaN(val) && val > 0) {
                     timerTotal = val * 60;
@@ -11536,18 +11777,23 @@ els.playerList.addEventListener('input', e => {
             };
 
             timerSubBtn.onclick = () => {
+                if (myRole === 'client') return;
                 timerRemain -= 30;
                 if (timerRemain < 0) timerRemain = 0;
                 updateTimerUI();
+                if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
             };
 
             timerAddBtn.onclick = () => {
+                if (myRole === 'client') return;
                 timerRemain += 30;
                 if (timerRemain > timerTotal) timerTotal = timerRemain;
                 updateTimerUI();
+                if (typeof window.broadcastTimeSync === 'function') window.broadcastTimeSync();
             };
 
             timerToggleBtn.onclick = () => {
+                if (myRole === 'client') return;
                 if (isTimerRunning) {
                     stopTimer();
                 } else {
@@ -11559,6 +11805,7 @@ els.playerList.addEventListener('input', e => {
             };
 
             timerResetBtn.onclick = () => {
+                if (myRole === 'client') return;
                 resetTimer();
             };
 
@@ -11921,7 +12168,8 @@ els.playerList.addEventListener('input', e => {
             const SETTING_KEYS = ['ovoSettings', 'ovoViewMode', 'ssViewMode', 'ssCapsuleSettings',
                 'lsSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
                 'achSettings', 'customCardColor', 'unoHiddenModules', 'unoViewConfigs', 'activeAudienceView',
-                'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning'];
+                'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning',
+                'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols'];
             const appSettings = {};
             SETTING_KEYS.forEach(k => {
                 try {
@@ -11999,7 +12247,13 @@ els.playerList.addEventListener('input', e => {
                                         window.__importedAppSettings = appS;  // 暂存，供图片库/主题还原使用
                                         Object.keys(appS).forEach(sk => {
                                             if (sk === '__imageLibrary__' || sk === '__imageLibraryOld__' || sk === '__theme__') return;
-                                            try { localStorage.setItem(sk, JSON.stringify(appS[sk])); } catch (e2) {}
+                                            try {
+                                                // 还原时按类型写回：对象/数组需 JSON 序列化；纯字符串/数字/布尔直接原样写回，
+                                                // 否则会被 JSON.stringify 包上多余引号，导致 earnViewMode/ovoViewMode 等恢复失败。
+                                                const v = appS[sk];
+                                                if (v !== null && typeof v === 'object') localStorage.setItem(sk, JSON.stringify(v));
+                                                else localStorage.setItem(sk, String(v));
+                                            } catch (e2) {}
                                         });
                                         try {
                                             const th = appS.__theme__;
@@ -18623,10 +18877,14 @@ else if (role === 'client') {
                         gameData: gameData,
                         v2State: v2State,
                         // 连带把主机的计时器状态、秒表状态全部发过去进行强绑定
+                        timerTotal: typeof timerTotal !== 'undefined' ? timerTotal : (8 * 60),
                         timerRemain: typeof timerRemain !== 'undefined' ? timerRemain : 0,
                         isTimerRunning: typeof isTimerRunning !== 'undefined' ? isTimerRunning : false,
                         trElapsedSeconds: typeof trElapsedSeconds !== 'undefined' ? trElapsedSeconds : 0,
-                        trIsRunning: typeof trIsRunning !== 'undefined' ? trIsRunning : false
+                        trIsRunning: typeof trIsRunning !== 'undefined' ? trIsRunning : false,
+                        timeSyncSeq: timeSyncSeq,
+                        // 所有模块 UI 参数（含 LOGO 本地图片）一并强同步，保证玩家端与主机像素级一致
+                        settings: (typeof window.collectAllAppSettings === 'function') ? window.collectAllAppSettings() : null
                     };
                     mqttClient.publish(`uno_room_${roomCode}`, JSON.stringify(syncData));
                 }
@@ -18638,14 +18896,21 @@ else if (role === 'client') {
                     if(payload.v2State) v2State = payload.v2State;
                     
                     // 【时空穿梭对齐】自动拉取并装载主机当前正在进行的局数和倒计时进度
+                    if (payload.timerTotal !== undefined) timerTotal = payload.timerTotal;
                     if (payload.timerRemain !== undefined) timerRemain = payload.timerRemain;
                     if (payload.isTimerRunning !== undefined) isTimerRunning = payload.isTimerRunning;
                     if (payload.trElapsedSeconds !== undefined) trElapsedSeconds = payload.trElapsedSeconds;
                     if (payload.trIsRunning !== undefined) trIsRunning = payload.trIsRunning;
+                    if (payload.timeSyncSeq !== undefined) lastTimeSyncSeq = payload.timeSyncSeq;
+
+                    // 【UI参数强同步】主机所有模块设置（含本地上传的 LOGO 图片）一并还原
+                    if (payload.settings && typeof window.applyAllAppSettings === 'function') window.applyAllAppSettings(payload.settings);
 
                     saveData(); // 存入本地缓存
                     if (typeof updateTimerUI === 'function') updateTimerUI();
                     if (typeof updateTrDisplay === 'function') updateTrDisplay();
+                    if (typeof window.syncTimerControlVisuals === 'function') window.syncTimerControlVisuals();
+                    if (typeof window.refreshAllSettingsUI === 'function') window.refreshAllSettingsUI();
 
                     // 直接全屏刷新数据，不再强制弹窗选座
                     gameData.currentSessionIndex = -1;
@@ -19192,8 +19457,11 @@ window.broadcastV2State = function() {
         // 【新增时间同步广播】主机专用，向全场毫秒级同步当前的倒计时和秒表进度
         window.broadcastTimeSync = function() {
             if (myRole !== 'host' || !mqttClient) return;
+            timeSyncSeq++;
             mqttClient.publish(`uno_room_${roomCode}`, JSON.stringify({
                 action: 'TIME_SYNC',
+                seq: timeSyncSeq,
+                timerTotal: timerTotal,
                 timerRemain: timerRemain,
                 isTimerRunning: isTimerRunning,
                 trElapsedSeconds: trElapsedSeconds,
@@ -19326,27 +19594,24 @@ if (payload.eliminatedStr) {
 
                 // 【情景 D：时间实时静默对齐】副机完全信奉主机的时钟，拒绝时间回弹和拉扯
                 if (payload.action === 'TIME_SYNC' && myRole === 'client') {
-                    // 【防回跳机制】倒计时单调递减，秒表单调递增，拒绝旧消息导致的抽搐
-                    // 只有当新值比当前值"更合理"时才更新（倒计时<=当前，秒表>=当前）
-                    // 但允许重置（0）或暂停状态变化
-                    const newRemain = payload.timerRemain;
-                    const newElapsed = payload.trElapsedSeconds;
-                    
-                    // 倒计时：只接受更小或相等的值（单调递减），除非是重置为0或初始状态
-                    if (newRemain <= timerRemain || newRemain === 0 || timerRemain === 0) {
-                        timerRemain = newRemain;
-                    }
-                    
-                    // 秒表：只接受更大或相等的值（单调递增），除非是重置为0
-                    if (newElapsed >= trElapsedSeconds || newElapsed === 0) {
-                        trElapsedSeconds = newElapsed;
-                    }
-                    
+                    // 【序号防旧包】主机每次广播序号+1，迟到/乱序的旧包直接丢弃，彻底根绝时间回跳与拉扯
+                    if (typeof payload.seq === 'number' && payload.seq < lastTimeSyncSeq) return;
+                    lastTimeSyncSeq = payload.seq || 0;
+                    // 主机是唯一权威时钟：除序号校验外，无条件采信最新值（含复位后变大的倒计时、归零的秒表）
+                    if (payload.timerTotal !== undefined) timerTotal = payload.timerTotal;
+                    timerRemain = payload.timerRemain;
+                    trElapsedSeconds = payload.trElapsedSeconds;
                     isTimerRunning = payload.isTimerRunning;
                     trIsRunning = payload.trIsRunning;
-                    
                     if (typeof updateTimerUI === 'function') updateTimerUI();
                     if (typeof updateTrDisplay === 'function') updateTrDisplay();
+                    if (typeof window.syncTimerControlVisuals === 'function') window.syncTimerControlVisuals();
+                }
+
+                // 【情景 D2：增量设置同步】主机改了任意 UI 参数（含 LOGO 图片）→ 副机实时强同步
+                if (payload.action === 'SETTINGS_SYNC' && myRole === 'client') {
+                    if (payload.settings && typeof window.applyAllAppSettings === 'function') window.applyAllAppSettings(payload.settings);
+                    if (typeof window.refreshAllSettingsUI === 'function') window.refreshAllSettingsUI();
                 }
 
             } catch (e) {}
