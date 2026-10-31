@@ -2207,6 +2207,8 @@
             <button id="imgLibUploadBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#6D82EE] text-white shadow-sm"><i class="fa-solid fa-upload mr-1"></i>上传图片</button>
             <button id="imgLibExportBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#4ADE80] text-white shadow-sm"><i class="fa-solid fa-file-export mr-1"></i>导出JSON</button>
             <button id="imgLibImportBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#F59E0B] text-white shadow-sm"><i class="fa-solid fa-file-import mr-1"></i>导入JSON</button>
+            <button id="imgLibExportXlsxBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#22C55E] text-white shadow-sm"><i class="fa-solid fa-file-excel mr-1"></i>导出Excel</button>
+            <button id="imgLibImportXlsxBtn" class="kawaii-btn !py-1.5 !px-3 text-xs sm:text-sm bg-[#EA580C] text-white shadow-sm"><i class="fa-solid fa-file-excel mr-1"></i>导入Excel</button>
         </div>
     </div>
     <!-- 搜索框 + 已选计数 -->
@@ -2223,7 +2225,7 @@
     </div>
     <!-- 图片网格：JS 动态渲染 -->
     <div id="imgLibGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
-    <p class="text-[10px] text-gray-400 mt-2 leading-tight">提示：上传的图片会自动压缩并存入本地（localStorage ＋ 大容量备用仓库双保险，刷新/关机都不会丢），PNG 自动保留透明通道；同时会随「数据管理 → 导出Excel」工程文件完整备份。导入JSON会覆盖整个图片库。每张图可用下方下拉框归到「卡牌信息」的分类。</p>
+    <p class="text-[10px] text-gray-400 mt-2 leading-tight">提示：上传的图片会自动压缩并存入本地（localStorage ＋ 大容量备用仓库双保险，刷新/关机都不会丢），PNG 自动保留透明通道；同时会随「数据管理 → 导出Excel」工程文件完整备份。导入JSON会<b>覆盖</b>整个图片库；而<b>导入Excel是「合并」</b>，不会删掉你已有的图（同 ID / 同图片会自动去重）。Excel 里图片代码直接存在单元格中，超过单元格上限会自动切成多片，导入时自动拼回，可放心往返。每张图可用下方下拉框归到「卡牌信息」的分类。</p>
     </div>
 </section>
 
@@ -7815,8 +7817,7 @@ setTimeout(function () {
             { key: 'cardPad',      label: '榜单内边距',   min: 0,  max: 40, def: 12, unit: 'px' },
             { key: 'cardGap',      label: '条目之间间距', min: 0,  max: 40, def: 10, unit: 'px' },
             { key: 'cardOpacity',  label: '榜单不透明度', min: 20, max: 100, def: 100, unit: '%' },
-            { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' },
-            { key: 'plateOpacity', label: '底板透明度(0=全透)', min: 0, max: 100, def: 100, unit: '%' }
+            { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' }
         ]},
         { view: 'main', group: '收益条', items: [
             { key: 'rowH',       label: '条高度',       min: 34, max: 110, def: 54, unit: 'px' },
@@ -7898,6 +7899,9 @@ setTimeout(function () {
             { key: 'inputFontSize', label: '输入数字大小', min: 10, max: 34,  def: 15, unit: 'px' },
             { key: 'inputRadius',   label: '输入框圆角',   min: 0,  max: 24,  def: 10, unit: 'px' },
             { key: 'inputBorder',   label: '输入框边框',   min: 0,  max: 6,   def: 3,  unit: 'px' }
+        ]},
+        { view: 'both', group: '底板', items: [
+            { key: 'plateOpacity', label: '底板透明度(0=全透)', min: 0, max: 100, def: 100, unit: '%' }
         ]},
         { view: 'both', group: '标题LOGO（替换文字标题）', items: [
             { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
@@ -16672,6 +16676,109 @@ window.renderMethodManager = function() {
         reader.readAsText(file);
     }
 
+    // ===================== 图片库「导出 / 导入 Excel」=====================
+    // 需求：图片代码（dataURL）直接放在单元格里，且必须准确往返。
+    // 难点：Excel 单个单元格上限 32767 字符，一张图的 base64 往往远超这个数。
+    // 方案：把每张图的 dataURL 按 LIB_XLSX_CHUNK 切片，存进同一行的多个单元格。
+    // 行结构： A=ID  B=名称  C=分类ID  D=分片数  第5列起 = 数据分片（按顺序拼接即还原完整图片代码）
+    const LIB_XLSX_CHUNK = 30000;   // 比 32767 留足余量，避免任何截断
+
+    function exportImageLibraryExcel() {
+        try {
+            if (typeof XLSX === 'undefined') { alert('Excel 组件尚未加载完成（可能是网络问题），请稍候或刷新页面后重试！'); return; }
+            const lib = getLib();
+            const items = (lib && lib.items) ? lib.items : [];
+            if (!items.length) { alert('图片库是空的，没有可导出的图片。'); return; }
+            const rows = [];
+            let totalChunks = 0, skipped = 0;
+            items.forEach(function (it) {
+                const url = String((it && it.url) || '');
+                if (!url) { skipped++; return; }
+                const n = Math.max(1, Math.ceil(url.length / LIB_XLSX_CHUNK));
+                const row = [String(it.id || ''), String(it.name || ''), String(it.catId || ''), n];
+                for (let i = 0; i < n; i++) row.push(url.substr(i * LIB_XLSX_CHUNK, LIB_XLSX_CHUNK));
+                totalChunks += n;
+                rows.push(row);
+            });
+            if (!rows.length) { alert('没有可导出的有效图片数据。'); return; }
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '图片库');
+            const now = new Date();
+            const info = [
+                ['UNO 计分器 · 图片库 Excel 备份'],
+                ['格式版本', 1],
+                ['导出时间', now.toLocaleString()],
+                ['图片总数', items.length],
+                ['单片字符上限', LIB_XLSX_CHUNK + '（Excel 单元格上限为 32767，这里留足余量，绝不会被截断）'],
+                ['行结构', 'A=ID   B=名称   C=分类ID   D=分片数   第5列起=数据分片'],
+                ['还原方法', '把同一行第5列起的所有单元格按顺序拼接，即得到完整图片代码']
+            ];
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), '说明');
+            const fn = 'UNO图片库-' + String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '.xlsx';
+            if (window.safeWriteFile) window.safeWriteFile(wb, fn);
+            alert('已导出 ' + items.length + ' 张图片（共切成 ' + totalChunks + ' 个数据分片）' + (skipped ? ('\n已跳过无数据的 ' + skipped + ' 条') : ''));
+        } catch (err) {
+            console.error('图片库导出Excel失败：', err);
+            alert('导出失败：' + (err && err.message ? err.message : err));
+        }
+    }
+    window.exportImageLibraryExcel = exportImageLibraryExcel;
+
+    // ---- 导入图片库 Excel（合并，不覆盖已有图片）----
+    function importImageLibraryExcel(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onerror = function () { alert('文件读取失败，请重试。'); };
+        reader.onload = function (evt) {
+            try {
+                if (typeof XLSX === 'undefined') { alert('Excel 组件尚未加载完成（可能是网络问题），请稍候或刷新页面后重试！'); return; }
+                const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+                let sheet = null;
+                if (wb.SheetNames.indexOf('图片库') >= 0) sheet = wb.Sheets['图片库'];
+                else sheet = wb.Sheets[wb.SheetNames[0]];
+                if (!sheet) throw new Error('未找到图片数据页');
+                // raw:false —— 强制按字符串读取，防止长串被当成数字/科学计数法而损坏
+                const arr = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+                if (!arr || !arr.length) throw new Error('文件里没有图片数据');
+                const incoming = [];
+                let bad = 0;
+                arr.forEach(function (row) {
+                    if (!row || row.length < 5) return;
+                    const n = parseInt(row[3], 10);
+                    if (!n || n < 1) return;
+                    let url = '';
+                    for (let i = 0; i < n; i++) url += String(row[4 + i] === undefined || row[4 + i] === null ? '' : row[4 + i]);
+                    url = url.replace(/\s+/g, '');   // 去掉 Excel 可能夹带的换行/空格
+                    if (!url) { bad++; return; }
+                    if (url.indexOf('data:image') !== 0 && url.indexOf('http') !== 0 && url.indexOf('blob:') !== 0) { bad++; return; }
+                    incoming.push({
+                        id: String(row[0] || '') || ('lib_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+                        name: String(row[1] || '') || '图片',
+                        catId: String(row[2] || ''),
+                        url: url
+                    });
+                });
+                if (!incoming.length) { alert('没有读到有效的图片数据' + (bad ? ('，已跳过 ' + bad + ' 行无效数据') : '') + '。'); return; }
+                const lib = getLib();
+                const before = lib.items.length;
+                lib.items = mergeLibItems(lib.items, incoming);   // 同 ID / 同图片 自动去重，不会覆盖你已有的图
+                // mergeLibItems 只保留 id/name/url，这里把分类补回去
+                const catMap = {};
+                incoming.forEach(function (it) { if (it.catId) catMap[it.id] = it.catId; });
+                lib.items.forEach(function (it) { if (it.id && catMap[it.id] && !it.catId) it.catId = catMap[it.id]; });
+                persistLib();
+                renderImageLibrary();
+                const added = lib.items.length - before;
+                alert('导入完成！\n读取到 ' + incoming.length + ' 张，其中新增 ' + added + ' 张。\n图片库现有 ' + lib.items.length + ' 张（原有 ' + before + ' 张）' + (bad ? ('\n跳过无效行：' + bad) : ''));
+            } catch (err) {
+                console.error('图片库导入Excel失败：', err);
+                alert('导入失败：' + (err && err.message ? err.message : err));
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    window.importImageLibraryExcel = importImageLibraryExcel;
+
     // ===================== 绑定按钮（仅后台管理图片库） =====================
     const uploadBtn = document.getElementById('imgLibUploadBtn');
     if (uploadBtn) uploadBtn.onclick = function () { window.pickImages(uploadImages); };
@@ -16679,6 +16786,13 @@ window.renderMethodManager = function() {
     if (exportBtn) exportBtn.onclick = exportImageLibraryJSON;
     const importBtn = document.getElementById('imgLibImportBtn');
     if (importBtn) importBtn.onclick = function () { if (window.pickFile) window.pickFile('.json,application/json', importImageLibraryJSON); };
+    // 【新增】图片库 Excel 导出 / 导入
+    const exportXlsxBtn = document.getElementById('imgLibExportXlsxBtn');
+    if (exportXlsxBtn) exportXlsxBtn.onclick = exportImageLibraryExcel;
+    const importXlsxBtn = document.getElementById('imgLibImportXlsxBtn');
+    if (importXlsxBtn) importXlsxBtn.onclick = function () {
+        if (window.pickFile) window.pickFile('.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', importImageLibraryExcel);
+    };
     // 批量管理开关
     const batchBtn = document.getElementById('imgLibBatchBtn');
     if (batchBtn) batchBtn.onclick = function () { if (window.toggleLibBatchMode) window.toggleLibBatchMode(); };
@@ -20264,19 +20378,30 @@ if (payload.eliminatedStr) {
       var grad=document.createElement('div'); grad.id='dmGradLayer';
       grad.style.cssText='position:absolute;inset:0;background-size:cover;background-position:center;';
       var cb=document.createElement('div'); cb.id='dmCardBg';
-      cb.style.cssText='position:absolute;left:50%;top:50%;width:200vw;height:200vh;transform:translate(-50%,-50%) rotate(30deg);display:flex;align-items:flex-start;justify-content:center;pointer-events:none;';
+      // 【黑屏修复】150vw/150vh 而非 200vw/200vh —— 旋转后的合成层面积越小，手机 GPU 越不容易出现黑屏/丢帧
+      cb.style.cssText='position:absolute;left:50%;top:50%;width:150vw;height:150vh;transform:translate(-50%,-50%) rotate(30deg);display:flex;align-items:flex-start;justify-content:center;pointer-events:none;';
       st.appendChild(grad); st.appendChild(cb);
       document.body.appendChild(st);
     }
     return st;
   }
+  // 【黑屏修复】强制一次重排/重绘 —— 手机上大面积合成层常出现「整屏黑、随手点一下又恢复」，
+  // 本质是首帧没有完成合成，读一次 offsetWidth 即可强制浏览器立即重绘。
+  function dmRepaint(){
+    try{
+      var st=document.getElementById('dmBgStage'); if(st) void st.offsetWidth;
+      var main=dmGetMain(); if(main) void main.offsetHeight;
+    }catch(e){}
+  }
   function dmApplyBg(){
     var main=dmGetMain();
-    var st=dmEnsureBgStage(); if(st) st.style.display='block';
+    // 舞台本体也刷一遍底色作为保底：万一卡牌层合成失败，看到的也该是渐变底色而不是黑屏
+    var st=dmEnsureBgStage(); if(st){ st.style.display='block'; st.style.background=dmBgCss(); }
     var grad=document.getElementById('dmGradLayer');
     if(grad) grad.style.background=dmBgCss();
     if(main) main.style.background='transparent';
     dmBuildCardBg();
+    dmRepaint();
   }
   // 收集卡牌图片（卡牌系统 + 胜负自定义方式），与开机/大厅背景同源
   function dmCollectCardUrls(){
@@ -20295,11 +20420,13 @@ if (payload.eliminatedStr) {
   function dmBuildCardBg(){
     var layer=document.getElementById('dmCardBg'); if(!layer) return;
     var s=window.displayModeSettings;
-    if(!s.cardBg){ layer.innerHTML=''; layer.style.opacity='0'; return; }
+    if(!s.cardBg){ layer.innerHTML=''; layer.style.opacity='0'; dmRepaint(); return; }
     var urls=dmCollectCardUrls();
     var def="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' fill='%239ca3af' font-size='20' font-family='sans-serif' text-anchor='middle' dy='.3em'>UNO</text></svg>";
     if(!urls.length) urls=[def,def,def];
-    var cols=12, per=14, speed=(s.cardBgSpeed||70);
+    // 【黑屏修复】原为 12 列 × 14 张 —— 每列都是一个被 will-change 提升的超大合成层，
+    // 手机上极易超出 GPU 合成预算而整屏发黑。减到 10 列 × 12 张，并去掉 will-change。
+    var cols=10, per=12, speed=(s.cardBgSpeed||70);
     var html='<div class="flex justify-center items-start w-full h-full">';
     for(var i=0;i<cols;i++){
       var up=(i%2===0);
@@ -20308,11 +20435,12 @@ if (payload.eliminatedStr) {
       var half=colUrls.map(function(u){
         return '<div class="py-2 sm:py-3 px-2 sm:px-3 w-full shrink-0"><div class="w-full aspect-[2/3] bg-[#111111] border-[3px] border-[#5E4B8B] rounded-[8px] shadow-lg overflow-hidden flex items-center justify-center"><img src="'+u+'" class="w-full h-full object-contain" crossorigin="anonymous"></div></div>';
       }).join('');
-      html+='<div class="flex flex-col w-[90px] sm:w-[120px] shrink-0" style="animation:'+(up?'lobbySlideUp':'lobbySlideDown')+' '+speed+'s linear infinite;will-change:transform;">'+half+half+'</div>';
+      html+='<div class="flex flex-col w-[90px] sm:w-[120px] shrink-0" style="animation:'+(up?'lobbySlideUp':'lobbySlideDown')+' '+speed+'s linear infinite;">'+half+half+'</div>';
     }
     html+='</div>';
     layer.innerHTML=html;
     layer.style.opacity=String(s.cardBgOpacity!=null?s.cardBgOpacity:0.3);
+    dmRepaint();   // 【黑屏修复】建完立即强制重绘，避免首帧空白/发黑
   }
 
   function dmLoadSettings(){
@@ -20747,6 +20875,8 @@ if (payload.eliminatedStr) {
     try{ if(main&&main.requestFullscreen) main.requestFullscreen().catch(function(){}); }catch(e){}
     dmUltActive=wantUlt;
     if(dmUltActive) dmUltStart(); else { dmIndex=-1; dmNext(); }
+    // 【黑屏修复】首屏连续补两次强制重绘（下一帧 + 120ms 后），确保手机上不会停在黑帧
+    requestAnimationFrame(function(){ dmRepaint(); setTimeout(dmRepaint, 120); });
     dmEnforceInterval=setInterval(function(){ dmEnforce(dmCurrentId); }, 400);
     dmSyncUltBtn();
   };
@@ -20788,6 +20918,88 @@ if (payload.eliminatedStr) {
   window.initDisplayModeUI=function(){ dmRenderGrid(); dmRenderSettings(); dmRenderDetailGrid(); dmRestoreCollapse('displayMode', true); dmRestoreCollapse('detailModules', true); dmSyncUltBtn(); };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', window.initDisplayModeUI);
   else window.initDisplayModeUI();
+})();
+</script>
+
+<script>
+// ============================================================
+// 【新增】1V1 / 场次记录 / 收益榜 —— 「底板透明度」
+// 底板 = 模块最外层的 kawaii-card 大白卡（CSS: background: var(--card-bg)）。
+// 这里只把底板底色/渐变的 alpha 调低，卡片内部的文字与内容保持完全不透明。
+// ============================================================
+(function(){
+  'use strict';
+  function hexToRgb(h){
+    h=String(h||'').trim();
+    if(h.charAt(0)!=='#') return null;
+    h=h.slice(1);
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    if(h.length>=8) h=h.slice(0,6);
+    if(h.length!==6) return null;
+    var n=parseInt(h,16); if(isNaN(n)) return null;
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function withAlpha(c,a){
+    var s=String(c||'').trim();
+    var rgb=hexToRgb(s);
+    if(!rgb){
+      var m=s.match(/rgba?\(([^)]*)\)/i);
+      if(m){
+        var p=m[1].split(/[\s,\/]+/).filter(function(x){return x!=='';}).map(parseFloat);
+        if(p.length>=3&&!isNaN(p[0])) rgb=[p[0],p[1],p[2]];
+      }
+    }
+    if(!rgb) return null;
+    return 'rgba('+Math.round(rgb[0])+','+Math.round(rgb[1])+','+Math.round(rgb[2])+','+a+')';
+  }
+  // 把一段 CSS 颜色或渐变里的每一个颜色都替换成带 alpha 的版本
+  function alphaize(css,a){
+    var s=String(css||'').trim(); if(!s) return null;
+    if(/^(linear|radial|conic)/i.test(s)){
+      return s.replace(/(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/g,function(t){ return withAlpha(t,a)||t; });
+    }
+    return withAlpha(s,a);
+  }
+  function plateBase(){
+    var b='';
+    try{ b=(getComputedStyle(document.documentElement).getPropertyValue('--card-bg')||'').trim(); }catch(e){}
+    if(!b){ try{ b=(getComputedStyle(document.body).getPropertyValue('--card-bg')||'').trim(); }catch(e){} }
+    return b||'#ffffff';
+  }
+  function applyOne(el,pct){
+    if(!el) return;
+    var v=(pct===null||pct===undefined||pct==='')?100:parseFloat(pct);
+    if(isNaN(v)) v=100;
+    if(v>=100){ el.style.removeProperty('background'); return; }   // 100% → 还原成默认底板
+    var a=Math.max(0,Math.min(1,v/100));
+    var out=alphaize(plateBase(),a);
+    if(out) el.style.setProperty('background',out,'important');
+  }
+  function targets(){
+    return [
+      {el:document.getElementById('oneVsOneSection'), pct:(window.ovoSettings||{}).plateOpacity},
+      {el:document.getElementById('sessionSection'),  pct:(window.ssCapsuleSettings||{}).plateOpacity},
+      {el:document.getElementById('earningsSection'), pct:(window.earnSettings||{}).plateOpacity}
+    ];
+  }
+  function applyAll(){ targets().forEach(function(t){ applyOne(t.el,t.pct); }); }
+  window.__applyPlateOpacity=applyAll;
+
+  // 拖动这三个面板里任意一个滑块后，都重新贴一次底板
+  ['updateOvoSetting','updateSsCapsuleSetting','updateEarnSetting'].forEach(function(fn){
+    var orig=window[fn];
+    if(typeof orig!=='function') return;
+    window[fn]=function(){ var r=orig.apply(this,arguments); try{ applyAll(); }catch(e){} return r; };
+  });
+  // 卡片底色(--card-bg)变化时也要重贴（透明度是按当前底色换算出来的）
+  var prevNotify=window.notifySettingsChanged;
+  window.notifySettingsChanged=function(){
+    try{ if(typeof prevNotify==='function') prevNotify.apply(this,arguments); }catch(e){}
+    try{ applyAll(); }catch(e){}
+  };
+  function boot(){ try{ applyAll(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(boot,400); });
+  else setTimeout(boot,400);
 })();
 </script>
 </body>
