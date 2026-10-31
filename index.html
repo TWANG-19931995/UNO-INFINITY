@@ -459,7 +459,7 @@
           [使用方法] 顶部背景栏的上下留白，数值越大，背景栏越厚。
           ========================================================
         -->
-        <div class="fixed top-0 left-0 w-full z-[100] bg-[#BBE2D6] border-b-[4px] border-[#5E4B8B] py-2.5 sm:py-3 flex justify-center items-center shadow-md">
+        <div id="topBar" class="fixed top-0 left-0 w-full z-[100] bg-[#BBE2D6] border-b-[4px] border-[#5E4B8B] py-2.5 sm:py-3 flex justify-center items-center shadow-md">
          
 <!-- 【新增】左侧：云端同步快捷按钮 -->
             <!--
@@ -502,6 +502,143 @@
                 <button id="quickPlayerMgrBtn" class="hidden w-8 h-8 sm:w-10 sm:h-10 bg-[#F59E0B] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110" onclick="window.openPlayerManagerModal()">
                     <i class="fa-solid fa-users text-white text-xs sm:text-base"></i>
                 </button>
+
+                <!-- 【新增】最新战况样式设置按钮+下拉面板 (仅最新战况 tab1 页显示，从模块内右上角迁移至此) -->
+                <div id="lsSettingsWrap" class="relative hidden">
+                    <button id="lsSettingsBtn" class="w-8 h-8 sm:w-10 sm:h-10 bg-[#6ca5eb] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full flex items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110" onclick="window.toggleLsSettings()" title="最新战况样式设置">
+                        <i class="fa-solid fa-gear text-white text-xs sm:text-base"></i>
+                    </button>
+                    <div id="lsSettingsPanel" class="hidden absolute left-0 top-12 bg-white/95 border-[4px] border-[#5E4B8B] p-3 rounded-2xl w-[300px] shadow-xl z-[1000] max-h-[80vh] overflow-y-auto custom-scroll text-left">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-black text-[#5E4B8B] text-xs sm:text-sm">最新战况样式设置</span>
+                            <button onclick="window.toggleLsSettings()" class="text-[#5E4B8B] hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <!-- 模块显示开关：点亮显示 / 点灭隐藏 -->
+                        <div class="flex gap-2 mb-2">
+                            <button id="lsShowCardsBtn" onclick="window.toggleLsModule('lsShowCards')" class="flex-1 border-[2px] border-[#5E4B8B] rounded-full py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">单局卡片</button>
+                            <button id="lsShowBarsBtn" onclick="window.toggleLsModule('lsShowBars')" class="flex-1 border-[2px] border-[#5E4B8B] rounded-full py-1 font-black text-white text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5">累计总榜</button>
+                        </div>
+                        <div class="slider-group" data-panel="ls" data-gi="0" data-armed="0">
+                            <div class="grp-toggle" onclick="window.toggleSliderGroup('ls', '0')"><span class="grp-dot"></span>单局卡片 (绿框)<span class="grp-state">🔒 已锁定</span></div>
+                            <div class="grp-lock-hint">🔒 该组已锁定，点上方胶囊点亮后即可调节</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">卡片宽度·手机: <span id="lsCardWVal">58</span>px</label>
+                                    <input type="range" id="lsCardWInput" min="40" max="160" value="58" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsCardW', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">卡片宽度·电脑: <span id="lsCardWSmVal">90</span>px</label>
+                                    <input type="range" id="lsCardWSmInput" min="40" max="220" value="90" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsCardWSm', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">卡片间距: <span id="lsCardGapVal">8</span>px</label>
+                                    <input type="range" id="lsCardGapInput" min="0" max="30" value="8" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsCardGap', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">卡片圆角: <span id="lsCardRVal">16</span>px</label>
+                                    <input type="range" id="lsCardRInput" min="8" max="32" value="16" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsCardR', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">名字胶囊高: <span id="lsNameHVal">28</span>px</label>
+                                    <input type="range" id="lsNameHInput" min="22" max="56" value="28" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsNameH', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">名字字号: <span id="lsNameFontVal">16</span>px</label>
+                                    <input type="range" id="lsNameFontInput" min="10" max="28" value="16" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsNameFont', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">分数字号: <span id="lsScoreFontVal">14</span>px</label>
+                                    <input type="range" id="lsScoreFontInput" min="10" max="30" value="14" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsScoreFont', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">时间字号: <span id="lsTimeFontVal">15</span>px</label>
+                                    <input type="range" id="lsTimeFontInput" min="8" max="24" value="15" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsTimeFont', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slider-group" data-panel="ls" data-gi="1" data-armed="0">
+                            <div class="grp-toggle" onclick="window.toggleSliderGroup('ls', '1')"><span class="grp-dot"></span>累计总榜 (红框)<span class="grp-state">🔒 已锁定</span></div>
+                            <div class="grp-lock-hint">🔒 该组已锁定，点上方胶囊点亮后即可调节</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">行间距: <span id="lsRowGapVal">12</span>px</label>
+                                    <input type="range" id="lsRowGapInput" min="4" max="40" value="12" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsRowGap', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">动态条高度: <span id="lsBarHVal">22</span>px</label>
+                                    <input type="range" id="lsBarHInput" min="12" max="60" value="22" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsBarH', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">名字字号: <span id="lsBarNameFontVal">20</span>px</label>
+                                    <input type="range" id="lsBarNameFontInput" min="12" max="40" value="20" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsBarNameFont', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">分数字号: <span id="lsBarScoreFontVal">22</span>px</label>
+                                    <input type="range" id="lsBarScoreFontInput" min="12" max="48" value="22" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsBarScoreFont', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">头像大小: <span id="lsAvatarSizeVal">32</span>px</label>
+                                    <input type="range" id="lsAvatarSizeInput" min="16" max="120" value="32" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsAvatarSize', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">头像水平偏移: <span id="lsAvatarOffsetXVal">0</span>px</label>
+                                    <input type="range" id="lsAvatarOffsetXInput" min="-50" max="50" value="0" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsAvatarOffsetX', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">头像垂直偏移: <span id="lsAvatarOffsetYVal">0</span>px</label>
+                                    <input type="range" id="lsAvatarOffsetYInput" min="-50" max="50" value="0" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsAvatarOffsetY', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 【新增】头部胶囊区：整体大小 / 每行个数 / 与顶部间距 / 各胶囊显隐 -->
+                        <div class="slider-group" data-panel="ls" data-gi="2" data-armed="0">
+                            <div class="grp-toggle" onclick="window.toggleSliderGroup('ls', '2')"><span class="grp-dot"></span>头部胶囊区 (用时/轮次/时间/局次/总数)<span class="grp-state">🔒 已锁定</span></div>
+                            <div class="grp-lock-hint">🔒 该组已锁定，点上方胶囊点亮后即可调节</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">整体大小: <span id="lsHeadScaleVal">100</span>%</label>
+                                    <input type="range" id="lsHeadScaleInput" min="50" max="200" value="100" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsHeadScale', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">第二排每行个数: <span id="lsHeadPerRowVal">4</span>个</label>
+                                    <input type="range" id="lsHeadPerRowInput" min="1" max="4" value="4" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsHeadPerRow', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">标题胶囊距顶部: <span id="lsHeadTopGapVal">0</span>px</label>
+                                    <input type="range" id="lsHeadTopGapInput" min="0" max="80" value="0" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsHeadTopGap', this.value)">
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-[10px] font-bold text-[#5E4B8B]">玩家条距顶部: <span id="lsBarTopGapVal">0</span>px</label>
+                                    <input type="range" id="lsBarTopGapInput" min="0" max="80" value="0" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsBarTopGap', this.value)">
+                                </div>
+                            </div>
+                            <!-- 每个胶囊显隐开关 (按钮不受锁定影响，可直接切换) -->
+                            <div class="mt-2">
+                                <div class="text-[10px] font-bold text-[#5E4B8B] mb-1">各胶囊显示开关（点亮显示 / 点灭隐藏）</div>
+                                <div class="grid grid-cols-5 gap-1">
+                                    <button id="lsShowTimeBtn" onclick="window.toggleLsHeadCap('lsShowTime')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#15803D] active:translate-y-0.5">用时</button>
+                                    <button id="lsShowRoundBtn" onclick="window.toggleLsHeadCap('lsShowRound')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#15803D] active:translate-y-0.5">轮次</button>
+                                    <button id="lsShowDateBtn" onclick="window.toggleLsHeadCap('lsShowDate')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#15803D] active:translate-y-0.5">时间</button>
+                                    <button id="lsShowRangeBtn" onclick="window.toggleLsHeadCap('lsShowRange')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#15803D] active:translate-y-0.5">局次</button>
+                                    <button id="lsShowTotalBtn" onclick="window.toggleLsHeadCap('lsShowTotal')" class="bg-[#4ADE80] border-[2px] border-[#5E4B8B] rounded-lg py-1 font-black text-white text-[10px] shadow-[0_2px_0_#15803D] active:translate-y-0.5">总数</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 【顶部LOGO专属设置区】独立折叠，详尽参数 (上传/位置/大小/旋转/透明度/描边) -->
+                        <div class="ls-logo-block mt-2 border-[1.5px] border-[#5E4B8B] rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between bg-[#EDE7F6] border-[1.5px] border-[#5E4B8B] rounded-lg px-2 py-1 cursor-pointer" onclick="window.toggleLsLogoArea()">
+                                <span class="text-[10px] font-black text-[#5E4B8B]">🖼 顶部LOGO参数 (上传/位置/大小/旋转/透明度)</span>
+                                <span id="lsLogoAreaState" class="text-[10px] font-bold text-[#5E4B8B]">点击展开 ▾</span>
+                            </div>
+                            <div id="lsLogoPanelBox" class="hidden p-2"></div>
+                        </div>
+                        <div class="flex justify-end mt-2">
+                            <button onclick="window.resetLsSettings()" class="bg-[#FDE047] border-[2px] border-[#5E4B8B] rounded-full px-3 py-1 font-black text-[#5E4B8B] text-[10px] shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none hover:brightness-110">
+                                恢复默认
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
    
             <!-- 中间：动态胶囊标题 -->
@@ -566,7 +703,7 @@
                 </div>
 
                 <div class="relative">
-                    <button id="bgSwitcherBtn" class="w-8 h-8 sm:w-10 sm:h-10 bg-[#F87171] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full flex items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110">
+                    <button id="bgSwitcherBtn" class="hidden w-8 h-8 sm:w-10 sm:h-10 bg-[#F87171] border-[3px] sm:border-[4px] border-[#5E4B8B] rounded-full items-center justify-center shadow-[0_3px_0_#5E4B8B] active:translate-y-1 active:shadow-none transition-all hover:brightness-110">
                         <i class="fa-solid fa-gear text-white text-xs sm:text-base"></i>
                     </button>
                     <!-- 设置下拉面板 -->
@@ -651,38 +788,8 @@
 <!-- ======================================================== -->
         <section id="latestStatusSection" class="bg-white/65 border-[3px] sm:border-4 border-[#5E4B8B] rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-4 shadow-[0_4px_0_#5E4B8B] mb-6">
             <div class="flex flex-col items-center w-full relative">
-                
-                <!-- 最新战况样式设置按钮（右上角） -->
-                <button id="lsSettingsBtn" class="absolute top-0 right-0 z-50 bg-[#6ca5eb] border-[2.5px] border-[#5E4B8B] rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all hover:brightness-110" onclick="window.toggleLsSettings()">
-                    <i class="fa-solid fa-gear text-white text-base sm:text-lg"></i>
-                </button>
 
-                <!-- 最新战况样式设置面板 -->
-                <div id="lsSettingsPanel" class="hidden w-full bg-white border-[2.5px] border-[#5E4B8B] rounded-xl p-3 mb-3 shadow-[0_3px_0_#5E4B8B] z-50">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-black text-[#5E4B8B] text-xs sm:text-sm">最新战况样式设置</span>
-                        <button onclick="window.toggleLsSettings()" class="text-[#5E4B8B] hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    <div class="slider-group" data-panel="ls" data-gi="0" data-armed="0">
-                    <div class="grp-toggle" onclick="window.toggleSliderGroup('ls', '0')"><span class="grp-dot"></span>参数调节<span class="grp-state">🔒 已锁定</span></div>
-                    <div class="grp-lock-hint">🔒 该组已锁定，点上方胶囊点亮后即可调节</div>
-                    <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">头像大小: <span id="lsAvatarSizeVal">32</span>px</label>
-                            <input type="range" id="lsAvatarSizeInput" min="20" max="80" value="32" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsAvatarSize', this.value)">
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[10px] sm:text-xs font-bold text-[#5E4B8B]">纵向间距: <span id="lsRowGapVal">12</span>px</label>
-                            <input type="range" id="lsRowGapInput" min="4" max="40" value="12" class="w-full accent-[#6ca5eb]" disabled oninput="window.updateLsSetting('lsRowGap', this.value)">
-                        </div>
-                    </div>
-                    </div>
-                    <div class="flex justify-end mt-2">
-                        <button onclick="window.resetLsSettings()" class="bg-[#FDE047] border-[2px] border-[#5E4B8B] rounded-full px-3 py-1 font-black text-[#5E4B8B] text-[10px] sm:text-xs shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none hover:brightness-110">
-                            恢复默认
-                        </button>
-                    </div>
-                </div>
+                <!-- 【已迁移】最新战况样式设置按钮与面板已移至顶部左上角 (lsSettingsWrap / lsSettingsPanel) -->
 
                 <!-- 【容器2：带左右切换的局数选择器】 -->
                 <div class="flex items-center justify-center gap-2 mb-3 w-full px-2">
@@ -727,25 +834,29 @@
 
     <!-- 下半部：被融合进来的 ROUND 动态条区域 -->
     <div id="barSection" class="bg-white/65 border-[3px] sm:border-4 border-[#5E4B8B] rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-4 shadow-[0_4px_0_#5E4B8B]">
-<!-- 动态条标题 (全新三胶囊拆分版 + 总耗时) -->
-        <div class="flex flex-col items-center justify-center w-full px-1 mb-3 sm:mb-4 gap-2">
-            <!-- 顶排：原三胶囊 -->
-            <div class="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 max-w-[320px] w-full cursor-pointer hover:brightness-105 active:scale-95 transition-all" onclick="if(typeof openSessionModal === 'function') openSessionModal()">
-                <!-- 第一个：日期 (蓝底白字) -->
-                <div id="barDateLabel" class="bg-[#389ff5] border-[2.5px] border-[#5E4B8B] text-white rounded-full px-2 sm:px-3 py-1 text-[15px] sm:text-xs font-black shadow-[0_3px_0_#5E4B8B] shrink-0">ALL</div>
-                <!-- 第二个：第几局到第几局 (黄底紫字) -->
-                <div id="barRangeLabel" class="bg-[#fefce8] border-[2.5px] border-[#5E4B8B] text-[#5E4B8B] rounded-full px-2 sm:px-3 py-1 text-[20px] sm:text-xs font-black shadow-[0_3px_0_#5E4B8B] flex-1 text-center truncate">第0局</div>
-                <!-- 第三个：总局数 (红底白字) -->
-                <div id="barTotalLabel" class="bg-[#e11d48] border-[2.5px] border-[#5E4B8B] text-white rounded-full px-2 sm:px-3 py-1 text-[15px] sm:text-xs font-black shadow-[0_3px_0_#5E4B8B] shrink-0">总:0局</div>
+<!-- 动态条标题 (全新两排胶囊版：第一排用时 / 第二排 轮次·时间·局次·局数总数) -->
+        <!-- [整体大小] lsHeadScale 缩放 / [每行个数] lsHeadPerRow / [与顶部间距] lsHeadTopGap / [玩家条间距] lsBarTopGap → 均在最新战况设置面板可调 -->
+        <div id="lsHeadWrap" class="relative z-[95] flex flex-col items-center justify-center w-full px-1 mb-3 sm:mb-4" style="gap:6px;">
+            <!-- 顶部LOGO悬浮位 (绝对定位，不吃布局，参数在最新战况设置面板的「顶部LOGO」区调节) -->
+            <div id="lsLogoWrap" class="hidden">
+                <div id="lsLogoSlot" class="flex items-center w-full"></div>
             </div>
-            
-            <!-- 底排：全新区间总耗时胶囊 (图1红框要求) -->
-            <!-- 
-              [颜色] bg-[#e2e8f0] 浅灰底色
-              [文字] font-leslie 电子屏幕专用字体，增强时间的高级感 
-            -->
-            <div class="bg-[#e2e8f0] border-[2px] border-[#5E4B8B] text-[#5E4B8B] rounded-full px-4 py-0.5 text-[10px] sm:text-xs font-black shadow-[0_2px_0_#5E4B8B] flex items-center justify-center gap-1 opacity-90">
-                <i class="fa-solid fa-stopwatch"></i> 耗时 <span id="barTotalTimeLabel" class="font-leslie tracking-widest text-[12px] sm:text-[14px] translate-y-[1px]">00:00</span>
+            <!-- 第一排：用时胶囊 (单独一行) [白底 + 紫描边 + 紫字 + 无文字描边] -->
+            <div id="lsTimeRow" class="flex items-center justify-center w-full">
+                <div class="bg-white border-[2.5px] border-[#5c4c8b] rounded-full px-5 py-1 font-black text-[#5c4c8b] text-[14px] sm:text-[16px] shadow-[0_3px_0_#5c4c8b] flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-stopwatch pointer-events-none"></i> 用时：<span id="barTotalTimeLabel" class="font-leslie tracking-widest translate-y-[1px]">00:00:00</span>
+                </div>
+            </div>
+            <!-- 第二排：轮次 / 时间 / 局次 / 局数总数 (grid 布局，每行个数 lsHeadPerRow 可调 1~4) -->
+            <div id="lsHeadRow2" class="grid w-full cursor-pointer hover:brightness-105 active:scale-95 transition-all" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;" onclick="if(typeof openSessionModal === 'function') openSessionModal()">
+                <!-- 轮次 [红底白字] -->
+                <div id="barRoundLabel" class="bg-[#ff2534] border-[2.5px] border-[#9c0a00] rounded-full px-1 py-1 font-black text-white text-[13px] sm:text-[15px] text-center truncate shadow-[0_3px_0_#9c0a00]" style="-webkit-text-stroke: 1px #660000; paint-order: stroke fill;">ALL</div>
+                <!-- 时间 [黄底 + 橙描边 + 白字 + 白字描边cc7c00] -->
+                <div id="barDateLabel" class="bg-[#f6e243] border-[2.5px] border-[#cc7c00] rounded-full px-1 py-1 font-black text-white text-[13px] sm:text-[15px] text-center truncate shadow-[0_3px_0_#cc7c00]" style="-webkit-text-stroke: 1px #cc7c00; paint-order: stroke fill;">--/--/--</div>
+                <!-- 局次 [蓝底白字] -->
+                <div id="barRangeLabel" class="bg-[#389ff5] border-[2.5px] border-[#1c478a] rounded-full px-1 py-1 font-black text-white text-[13px] sm:text-[15px] text-center truncate shadow-[0_3px_0_#1c478a]" style="-webkit-text-stroke: 1px #002256; paint-order: stroke fill;">第0局</div>
+                <!-- 局数总数 [绿底 + 深绿描边白字 + 白字深绿描边] -->
+                <div id="barTotalLabel" class="bg-[#70bf30] border-[2.5px] border-[#085c00] rounded-full px-1 py-1 font-black text-white text-[13px] sm:text-[15px] text-center truncate shadow-[0_3px_0_#085c00]" style="-webkit-text-stroke: 1px #085c00; paint-order: stroke fill;">总0局</div>
             </div>
         </div>
         <div class="space-y-3 sm:space-y-5" id="barRanking"></div>
@@ -2042,6 +2153,40 @@
         </section>
 
 <!-- ======================================================== -->
+<!-- 【新增模块】成绩展示模式 + 详细数据模块管理 (后台管理区域) -->
+<!-- ======================================================== -->
+<section id="displayModeSection" class="kawaii-card p-3 sm:p-4 mb-6" style="display:none;">
+    <div class="flex justify-between items-center gap-2 flex-wrap mb-3">
+        <h2 class="text-sm sm:text-base font-bold text-[#5E4B8B] flex items-center">
+            <button type="button" onclick="if(typeof window.toggleDmCollapse==='function') window.toggleDmCollapse('displayMode')" class="mr-2 w-7 h-7 rounded-full bg-[#6D82EE] border-[2.5px] border-[#5E4B8B] text-white flex items-center justify-center shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all" title="展开 / 收起"><i id="displayMode_chev" class="fa-solid fa-chevron-down text-[11px]"></i></button>
+            <i class="fa-solid fa-tv text-[#6D82EE] mr-2 text-lg"></i>成绩展示模式
+        </h2>
+        <div class="flex gap-2 flex-wrap">
+            <button id="dmEnterBtn" onclick="if(typeof enterDisplayMode==='function') enterDisplayMode()" class="kawaii-btn !py-1.5 !px-4 text-xs sm:text-sm bg-[#6D82EE] text-white shadow-sm"><i class="fa-solid fa-play mr-1"></i>进入展示模式</button>
+            <button id="dmUltBtn" onclick="if(typeof window.dmToggleUltimate==='function') window.dmToggleUltimate()" class="kawaii-btn !py-1.5 !px-4 text-xs sm:text-sm bg-gray-200 text-[#5E4B8B] shadow-sm"><i class="fa-solid fa-infinity mr-1"></i>终极无限滚动</button>
+        </div>
+    </div>
+    <div id="displayModeBody" class="hidden">
+        <p class="text-[11px] text-[#5E4B8B] mb-2 leading-tight">点亮要展示的模块：<b>● 显示</b> / <b>○ 不显示</b> / <b>✕ 被其它设置点灭</b>。<br><b>★ 只显示点亮的</b>——会同时尊重「最新战况」的<b>单局卡片 / 累计总榜</b>两个卡片开关，以及「详细数据模块管理」的点灭（三处取交集，点灭的绝不显示）。<br><b>节奏：</b>短页用固定时长；长页 = 顶部停留 ＋ 按滚动速度滚完 ＋ 底部停留（<b>页面越长自动越久，不用固定值</b>）。<br><b>终极无限滚动：</b>点亮的模块拼成一条长龙 → <b>开头停留</b> → 持续下滚 → <b>结尾停留</b> → 回开头循环。</p>
+        <div id="dmModuleGrid" class="flex flex-wrap gap-2 mb-3"></div>
+        <div id="dmSettings" class="space-y-3"></div>
+    </div>
+</section>
+
+<section id="detailModulesSection" class="kawaii-card p-3 sm:p-4 mb-6" style="display:none;">
+    <div class="flex justify-between items-center gap-2 flex-wrap mb-2">
+        <h2 class="text-sm sm:text-base font-bold text-[#5E4B8B] flex items-center">
+            <button type="button" onclick="if(typeof window.toggleDmCollapse==='function') window.toggleDmCollapse('detailModules')" class="mr-2 w-7 h-7 rounded-full bg-[#F472B6] border-[2.5px] border-[#5E4B8B] text-white flex items-center justify-center shadow-[0_2px_0_#5E4B8B] active:translate-y-0.5 active:shadow-none transition-all" title="展开 / 收起"><i id="detailModules_chev" class="fa-solid fa-chevron-down text-[11px]"></i></button>
+            <i class="fa-solid fa-list-check text-[#F472B6] mr-2 text-lg"></i>详细数据模块管理
+        </h2>
+    </div>
+    <div id="detailModulesBody" class="hidden">
+        <p class="text-[11px] text-[#5E4B8B] mb-2 leading-tight">点亮点灭，决定「详细数据」页里是否显示该子模块。<b>此处的点灭同样对「成绩展示模式」生效</b>——被点灭的子模块在展示轮播与终极无限滚动里都不会出现（两处开关取交集，绝不会再出现“点灭的还在显示”）。</p>
+        <div id="detailModuleGrid" class="flex flex-wrap gap-2"></div>
+    </div>
+</section>
+
+<!-- ======================================================== -->
 <!-- 【新增模块】图片库 (位于后台管理区域，与数据管理并列) -->
 <!-- 【小白调节区】：整体卡片样式用 kawaii-card；按钮沿用 kawaii-btn -->
 <!-- ======================================================== -->
@@ -3253,7 +3398,9 @@ const modulesConfig =[
             { id: 'barSection', name: 'ROUND动态条', icon: 'fa-chart-bar' },
             { id: 'tableSection', name: '局次得分详情', icon: 'fa-table' },
             { id: 'dataIOSection', name: '后台管理', icon: 'fa-file-excel' },
-            { id: 'imageLibrarySection', name: '图片库', icon: 'fa-images' } /* 【新增】后台管理独立图片库，仅“后台管理”tab 显示 */
+            { id: 'imageLibrarySection', name: '图片库', icon: 'fa-images' }, /* 【新增】后台管理独立图片库，仅“后台管理”tab 显示 */
+            { id: 'displayModeSection', name: '成绩展示模式', icon: 'fa-tv' },
+            { id: 'detailModulesSection', name: '详细数据模块管理', icon: 'fa-list-check' }
         ];
         
         const defaultSectionOrder = modulesConfig.map(m => m.id);
@@ -3506,6 +3653,15 @@ let chartInstance = null;
             const m = String(Math.floor(seconds / 60)).padStart(2, '0');
             const s = String(seconds % 60).padStart(2, '0');
             return `${m}:${s}`;
+        }
+
+        // 【累计总榜·用时胶囊专用】时分秒格式 HH:MM:SS（区别于秒表的 MM:SS）
+        function formatHMS(sec) {
+            sec = Math.max(0, Math.floor(sec || 0));
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            return [h, m, s].map(function (x) { return String(x).padStart(2, '0'); }).join(':');
         }
 
         // 更新电子屏幕的显示
@@ -4297,9 +4453,9 @@ function initCloudUI() {
                 statusBadge.classList.replace('text-gray-400', 'text-[#F43F5E]');
                 statusBadge.classList.add('border-[#F43F5E]');
                 
-                // 【核心逻辑：左上角按钮切换】观众端：隐藏蓝色上传，显示绿色下载
+                // 【核心逻辑：左上角按钮切换】观众端：隐藏蓝色上传，绿色下载仅在「后台管理」页显示
                 if(quickHostBtn) { quickHostBtn.classList.add('hidden'); quickHostBtn.classList.remove('flex'); }
-                if(quickAudBtn) { quickAudBtn.classList.remove('hidden'); quickAudBtn.classList.add('flex'); }
+                if(quickAudBtn) { if (window.__currentMobileTab === 'tab8') { quickAudBtn.classList.remove('hidden'); quickAudBtn.classList.add('flex'); } else { quickAudBtn.classList.add('hidden'); quickAudBtn.classList.remove('flex'); } }
 
 // 【修复：观众端也显示详细数据，并绝对保留您的 5 等分排版！】
                 if(tab5) tab5.style.setProperty('display', 'flex', 'important');
@@ -4323,8 +4479,8 @@ function initCloudUI() {
                 statusBadge.classList.replace('text-gray-400', 'text-[#4ADE80]');
                 statusBadge.classList.add('border-[#4ADE80]');
                 
-                // 【核心逻辑：左上角按钮切换】主机端：显示蓝色上传，隐藏绿色下载
-                if(quickHostBtn) { quickHostBtn.classList.remove('hidden'); quickHostBtn.classList.add('flex'); }
+                // 【核心逻辑：左上角按钮切换】主机端：蓝色上传仅在「后台管理」页显示，隐藏绿色下载
+                if(quickHostBtn) { if (window.__currentMobileTab === 'tab8') { quickHostBtn.classList.remove('hidden'); quickHostBtn.classList.add('flex'); } else { quickHostBtn.classList.add('hidden'); quickHostBtn.classList.remove('flex'); } }
                 if(quickAudBtn) { quickAudBtn.classList.add('hidden'); quickAudBtn.classList.remove('flex'); }
 
                 // 【核心逻辑：底部导航重排版】主机端恢复第5个按钮，并改回5等分
@@ -6936,6 +7092,18 @@ window.__getLogoCtx = function (ns) {
             repanel: function () { try { if (window.__rebuildEarnPanel) window.__rebuildEarnPanel(); } catch (e) {} }
         };
     }
+    if (ns === 'ls') {
+        // 最新战况·累计总榜顶部LOGO：独立存储键 lsLogoSettings，悬浮于头部最高层不吃布局
+        return {
+            S: window.lsLogoSettings || {},
+            slot: 'lsLogoSlot', wrap: 'lsLogoWrap', hideWrapWhenEmpty: true,
+            save: function () { try { localStorage.setItem('lsLogoSettings', JSON.stringify(window.lsLogoSettings)); } catch (e) {} if (window.notifySettingsChanged) window.notifySettingsChanged(); },
+            rerender: function () {
+                try { window.renderModuleLogo('ls'); } catch (e) {}
+            },
+            repanel: function () { try { if (window.__rebuildLsLogoPanel) window.__rebuildLsLogoPanel(); } catch (e) {} }
+        };
+    }
     return null;
 };
 window.renderModuleLogo = function (ns) {
@@ -6953,7 +7121,7 @@ window.renderModuleLogo = function (ns) {
             wrap.style.left = '0';
             wrap.style.right = '0';
             wrap.style.top = ((S.logoTop === undefined) ? 0 : S.logoTop) + 'px';
-            wrap.style.zIndex = '80';
+            wrap.style.zIndex = '95';
             wrap.style.pointerEvents = 'none';
             wrap.style.margin = '0';
             wrap.style.width = 'auto';
@@ -7037,10 +7205,10 @@ window.toggleModuleLogoShadow = function (ns) {
 // ============================================================
 (function () {
     const SYNC_KEYS = ['ovoSettings', 'ovoViewMode', 'ssViewMode', 'ssCapsuleSettings',
-        'lsSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
+        'lsSettings', 'lsLogoSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
         'achSettings', 'customCardColor', 'unoHiddenModules', 'unoViewConfigs', 'activeAudienceView',
         'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning',
-        'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols'];
+        'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols', 'displayModeSettings', 'detailModuleHidden'];
 
     // 把本机所有模块设置打包成对象（含 LOGO 的 dataURL 本地图片）
     window.collectAllAppSettings = function () {
@@ -7072,6 +7240,7 @@ window.toggleModuleLogoShadow = function (ns) {
         try { if (obj.earnSettings) window.earnSettings = Object.assign({}, obj.earnSettings); } catch (e) {}
         try { if (obj.ssCapsuleSettings) window.ssCapsuleSettings = Object.assign({}, obj.ssCapsuleSettings); } catch (e) {}
         try { if (obj.lsSettings) window.lsSettings = Object.assign({}, obj.lsSettings); } catch (e) {}
+        try { if (obj.lsLogoSettings) window.lsLogoSettings = Object.assign({}, obj.lsLogoSettings); } catch (e) {}
         try { if (obj.rbSettings) window.rbSettings = Object.assign({}, obj.rbSettings); } catch (e) {}
         try { if (obj.rtCapsuleSettings) window.rtCapsuleSettings = Object.assign({}, obj.rtCapsuleSettings); } catch (e) {}
         try { if (obj.rsWheelSettings) window.rsWheelSettings = Object.assign({}, obj.rsWheelSettings); } catch (e) {}
@@ -7113,15 +7282,27 @@ window.toggleModuleLogoShadow = function (ns) {
 
     // 应用设置后，刷新所有依赖设置的界面
     window.refreshAllSettingsUI = function () {
+        // 【修复】lsSettings 是扁平键方案的 localStorage 镜像，收到同步后必须回写到 window.ls* 各内存键，否则渲染仍用旧值
+        try {
+            if (window.lsSettings) Object.keys(window.LS_DEFAULTS).forEach(function (k) {
+                if (window.lsSettings[k] !== undefined) window[k] = window.lsSettings[k];
+            });
+        } catch (e) {}
+        try { window.applyLsDynamicCss(); } catch (e) {}
+        try { window.applyLsModuleVisibility(); } catch (e) {}
         try { if (window.__rebuildOvoPanel) window.__rebuildOvoPanel(); } catch (e) {}
         try { if (window.__rebuildSsPanel) window.__rebuildSsPanel(); } catch (e) {}
         try { if (window.__rebuildEarnPanel) window.__rebuildEarnPanel(); } catch (e) {}
         try { window.renderModuleLogo('ovo'); } catch (e) {}
         try { window.renderModuleLogo('ss'); } catch (e) {}
         try { window.renderModuleLogo('earn'); } catch (e) {}
+        try { window.renderModuleLogo('ls'); } catch (e) {}
+        try { if (window.__rebuildLsLogoPanel) window.__rebuildLsLogoPanel(); } catch (e) {}
         try { if (typeof window.renderOneVsOneArena === 'function') window.renderOneVsOneArena(); } catch (e) {}
         try { if (typeof renderSessionSection === 'function') renderSessionSection(); } catch (e) {}
         try { if (typeof window.renderEarnings === 'function') window.renderEarnings(); } catch (e) {}
+        try { if (typeof window.renderLatestStatus === 'function') window.renderLatestStatus(); } catch (e) {}
+        try { if (typeof renderBarRanking === 'function') renderBarRanking(); } catch (e) {}
         try { if (typeof updateAllUI === 'function') updateAllUI(); } catch (e) {}
     };
 
@@ -7158,7 +7339,7 @@ setTimeout(function () {
         statCapH: 54, statCapRadius: 14, statNumSize: 24, statPctSize: 12, statGap: 8, statPctGap: 4, statTotalCapSize: 54, statTotalNumSize: 24,
         vsCapH: 46, vsCapRadius: 14, vsCapW: 64, vsNumSize: 24, vsPctSize: 14, vsPillW: 36, vsTextSize: 20,
         vsRowGap: 10, vsPad: 8, vsCardRadius: 14, vsInnerGap: 0, vsPillGap: 8, vsPillX: 0,
-        numStroke: 2, showName: 0, titleGap: 12,
+        numStroke: 2, showName: 0, titleGap: 12, plateOpacity: 100,
         // ===== 标题 LOGO（替换原「1V1擂台区」文字标题，支持 PNG 异形透明通道）=====
         logoData: '', logoShow: 1, logoW: 170, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0,
         logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0,
@@ -7216,7 +7397,8 @@ setTimeout(function () {
             { key: 'numStroke', label: '数字描边宽度', min: 0, max: 5, step: 0.5, def: 2, unit: 'px' }
         ]},
         { group: '卡片与顶部', items: [
-            { key: 'topGap', label: '卡片与最上方间距(0=贴顶)', min: 0, max: 200, def: 68, unit: 'px' }
+            { key: 'topGap', label: '卡片与最上方间距(0=贴顶)', min: 0, max: 200, def: 68, unit: 'px' },
+            { key: 'plateOpacity', label: '底板透明度(0=全透)', min: 0, max: 100, def: 100, unit: '%' }
         ]},
         { group: '标题LOGO（替换文字标题）', items: [
             { key: 'logoTop',     label: 'LOGO距顶部',     min: -60,  max: 200, def: 0,   unit: 'px' },
@@ -7611,7 +7793,9 @@ setTimeout(function () {
         theme: 0,         showRank: 1, showAvatar: 1, showBar: 1, showWins: 1, showZero: 1, editNewFirst: 1,
         // 标题 LOGO
         logoData: '', logoShow: 1, logoW: 170, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0,
-        logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0
+        logoRotate: 0, logoOpacity: 100, logoOutline: 0, logoShadow: 1, logoTop: 0,
+        // 【新增】底板（最外层 kawaii-card 大白卡）透明度，100=完全不透明
+        plateOpacity: 100
     };
 
     // ===== 配色主题（默认「红盈绿亏」，符合国内涨红跌绿习惯）=====
@@ -7631,7 +7815,8 @@ setTimeout(function () {
             { key: 'cardPad',      label: '榜单内边距',   min: 0,  max: 40, def: 12, unit: 'px' },
             { key: 'cardGap',      label: '条目之间间距', min: 0,  max: 40, def: 10, unit: 'px' },
             { key: 'cardOpacity',  label: '榜单不透明度', min: 20, max: 100, def: 100, unit: '%' },
-            { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' }
+            { key: 'topGap',       label: '内容距顶部(0=贴顶)', min: 0, max: 200, def: 52, unit: 'px' },
+            { key: 'plateOpacity', label: '底板透明度(0=全透)', min: 0, max: 100, def: 100, unit: '%' }
         ]},
         { view: 'main', group: '收益条', items: [
             { key: 'rowH',       label: '条高度',       min: 34, max: 110, def: 54, unit: 'px' },
@@ -8484,7 +8669,9 @@ function renderSessionSection() {
             // 首根横条与最上方的真实间距（0 = 完全贴合顶部；默认留出悬浮头像的空间）
             barTopGap: 26,
             // 横条内胜利玩家名字（白色，独立大小/位移，不影响任何其他元素）
-            winNameShow: 1, winNameSize: 18, winNameX: 62, winNameY: 0, winNameStroke: 2
+            winNameShow: 1, winNameSize: 18, winNameX: 62, winNameY: 0, winNameStroke: 2,
+            // 【新增】底板（最外层 kawaii-card 大白卡）透明度，100=完全不透明
+            plateOpacity: 100
         };
 
         // ===== 视图模式 (默认胶囊长条视图) =====
@@ -8600,7 +8787,8 @@ function renderSessionSection() {
             { group: '得分 / 文字', items: [
                 { key: 'scoreSize',     label: '得分文字大小', min: 14, max: 48, def: 26, unit: 'px' },
                 { key: 'scoreX',        label: '得分横轴位置', min: 0,  max: 100, def: 88, unit: '%' },
-                { key: 'scoreTsW',      label: '得分描边宽度', min: 0,  max: 5,  step: 0.5, def: 2, unit: 'px' }
+                { key: 'scoreTsW',      label: '得分描边宽度', min: 0,  max: 5,  step: 0.5, def: 2, unit: 'px' },
+                { key: 'plateOpacity',  label: '底板透明度(0=全透)', min: 0, max: 100, def: 100, unit: '%' }
             ]}
         ];
 
@@ -9658,16 +9846,18 @@ pointLabels: {
 function renderBarRanking() {
             const active = gameData.players.filter(p => p.isActive).sort((a,b) => b.total - a.total);
             
-            // 【全新：动态条三胶囊 + 总耗时 注入引擎】
-            const barDateLbl = document.getElementById('barDateLabel');
-            const barRangeLbl = document.getElementById('barRangeLabel');
-            const barTotalLbl = document.getElementById('barTotalLabel');
-            const barTimeLbl = document.getElementById('barTotalTimeLabel'); // 抓取新胶囊
+            // 【全新：动态条两排胶囊注入引擎】第一排用时 / 第二排 轮次·时间·局次·局数总数
+            const barRoundLbl = document.getElementById('barRoundLabel');   // 轮次胶囊 (红)
+            const barDateLbl = document.getElementById('barDateLabel');     // 时间胶囊 (黄)
+            const barRangeLbl = document.getElementById('barRangeLabel');   // 局次胶囊 (蓝)
+            const barTotalLbl = document.getElementById('barTotalLabel');   // 局数总数胶囊 (蓝绿边)
+            const barTimeLbl = document.getElementById('barTotalTimeLabel'); // 第一排用时胶囊
             
-            if (barDateLbl && barRangeLbl && barTotalLbl) {
-                let sDate = "ALL";
+            if (barRoundLbl && barDateLbl && barRangeLbl && barTotalLbl) {
+                let sRound = "ALL";
+                let sDate = "--/--/--";
                 let sRange = "第0局"; 
-                let sTotal = "总:0局";
+                let sTotal = "总0局";
                 let totalElapsed = 0; // 累计耗时容器
                 
                 // 只有当有游戏记录时才去计算
@@ -9675,14 +9865,18 @@ function renderBarRanking() {
                     let firstRound = viewRounds[0].round;
                     let lastRound = viewRounds[viewRounds.length - 1].round;
                     
-                    sRange = `第${firstRound}~${lastRound}局`;
-                    sTotal = `总:${viewRounds.length}局`;
+                    sRange = `${firstRound}局~${lastRound}局`;
+                    sTotal = `总${viewRounds.length}局`;
                     
                     if (customRange) {
+                        sRound = "自定义";
                         sDate = "自定义";
                     } else if (gameData.currentSessionIndex !== undefined && gameData.currentSessionIndex !== -1 && gameData.sessions[gameData.currentSessionIndex]) {
-                        sDate = gameData.sessions[gameData.currentSessionIndex].date;
+                        // 轮次 = 当前场次序号；时间 = 该场次日期
+                        sRound = `第${gameData.currentSessionIndex + 1}轮`;
+                        sDate = gameData.sessions[gameData.currentSessionIndex].date || "--/--/--";
                     } else {
+                        sRound = "ALL";
                         sDate = "ALL";
                     }
 
@@ -9693,11 +9887,20 @@ function renderBarRanking() {
                 }
                 
                 // 把算好的数据印到屏幕上
+                barRoundLbl.textContent = sRound;
                 barDateLbl.textContent = sDate;
                 barRangeLbl.textContent = sRange;
                 barTotalLbl.textContent = sTotal;
-                // 利用写好的时间转换器，填入 00:00 格式
-                if(barTimeLbl) barTimeLbl.textContent = typeof formatTrTime === 'function' ? formatTrTime(totalElapsed) : '00:00'; 
+                // 利用写好的时间转换器，填入 时分秒(HH:MM:SS) 格式
+                if(barTimeLbl) barTimeLbl.textContent = typeof formatHMS === 'function' ? formatHMS(totalElapsed) : '00:00:00'; 
+
+                // 【各胶囊显隐开关】按 lsShow* 标志控制每个胶囊的显示/隐藏（独立控制，互不影响布局）
+                const _tRow = document.getElementById('lsTimeRow');
+                if (_tRow) _tRow.style.display = (window.lsShowTime ? '' : 'none');
+                if (barRoundLbl) barRoundLbl.style.display = (window.lsShowRound ? '' : 'none');
+                if (barDateLbl) barDateLbl.style.display = (window.lsShowDate ? '' : 'none');
+                if (barRangeLbl) barRangeLbl.style.display = (window.lsShowRange ? '' : 'none');
+                if (barTotalLbl) barTotalLbl.style.display = (window.lsShowTotal ? '' : 'none');
             }
             
             const maxAbs = Math.max(...active.map(p => Math.abs(p.total)), 1);
@@ -9724,33 +9927,40 @@ els.barRanking.innerHTML = active.map(p => {
                 
                 let shortName = p.name ? p.name.slice(-1) : '?';
 
+                // 【头像悬浮参数】大小 + 独立X/Y偏移，锚点零占位：调整头像不影响任何其他元素的布局
+                const __avSize = window.lsAvatarSize || 32;
+                const __avOx = window.lsAvatarOffsetX || 0;
+                const __avOy = window.lsAvatarOffsetY || 0;
+
                 return `
                 <div class="flex items-center rank-row w-full" data-id="${p.id}" style="margin-bottom: ${window.lsRowGap || 12}px;">
-                    
-                    <!-- 左侧（名字+头像）保持不动 -->
+
+                    <!-- 左侧（名字+悬浮头像）名字占位，头像零占位悬浮于最高层 -->
                     <div class="flex items-center shrink-0 mr-2 sm:mr-3 justify-end w-[65px] sm:w-[85px]">
-                        <span class="font-black tracking-widest leading-none drop-shadow-sm mr-1.5 sm:mr-2 text-[20px] sm:text-[24px]" style="color: ${p.color}; -webkit-text-stroke: 2px #5c4c8b; paint-order: stroke fill;">${shortName}</span>
-                        <!-- 头像：无边框、无圆角、支持异形PNG透明通道，层级最高 -->
-                        <div class="relative shrink-0 z-50 overflow-visible" style="width: ${window.lsAvatarSize || 32}px; height: ${window.lsAvatarSize || 32}px;">
-                            <img src="${p.avatar}" class="w-full h-full object-contain pointer-events-none select-none" crossorigin="anonymous" draggable="false">
-                        </div>
+                        <span class="font-black tracking-widest leading-none drop-shadow-sm mr-1.5 sm:mr-2" style="color: ${p.color}; -webkit-text-stroke: 2px #5c4c8b; paint-order: stroke fill; font-size: ${window.lsBarNameFont || 20}px;">${shortName}</span>
+                        <!-- 头像：零占位锚点 + 绝对定位悬浮 (z-90 最高层)，大小/偏移独立可调，绝不推挤其他元素 -->
+                        <span class="relative inline-block w-0 h-0 align-middle overflow-visible" style="z-index: 90;">
+                            <span class="absolute block pointer-events-none select-none" style="width: ${__avSize}px; height: ${__avSize}px; left: 0; top: 0; transform: translate(calc(-50% + ${__avOx}px), calc(-50% + ${__avOy}px)); z-index: 90;">
+                                <img src="${p.avatar}" class="w-full h-full object-contain pointer-events-none select-none" style="z-index: 90;" crossorigin="anonymous" draggable="false">
+                            </span>
+                        </span>
                     </div>
-                    
-                    <!-- 
+
+                    <!--
                       ========================================================
                       【小白魔法区：中间赛道与分数跟随】
                       [核心魔法] pr-[50px] sm:pr-[70px]
                       这句代码在右边隐形地留出了一个“安全空地”。确保当跑道达到 100% 满血时，挂在后面的分数正好落在这个空地里，绝不会爆出屏幕外！
                       ========================================================
                     -->
-                    <div class="flex-1 flex items-center h-[26px] sm:h-[32px] pr-[10px] sm:pr-[70px]">
-                        
+                    <div class="flex-1 flex items-center pr-[10px] sm:pr-[70px]" style="height: ${(window.lsBarH || 22) + 4}px;">
+
                         <!-- 动态条本体：长短根据分数变化 -->
-                        <div class="h-[22px] sm:h-[28px] rounded-full border-[2px] sm:border-[2.5px] border-[#5c4c8b] shadow-[0_2px_0_#5c4c8b] transition-all" 
-                             style="background-color: ${p.color}; width: ${width}%;" 
+                        <div class="rounded-full border-[2px] sm:border-[2.5px] border-[#5c4c8b] shadow-[0_2px_0_#5c4c8b] transition-all"
+                             style="background-color: ${p.color}; width: ${width}%; height: ${window.lsBarH || 22}px;"
                              data-width="${width}%"></div>
-                        
-                        <!-- 
+
+                        <!--
                           ========================================================
                           【分数挂载区】
                           [控制代码] ml-2 sm:ml-3
@@ -9758,9 +9968,9 @@ els.barRanking.innerHTML = active.map(p => {
                           ========================================================
                         -->
                         <div class="shrink-0 ml-2 sm:ml-3 flex items-center">
-                            <span class="font-black tracking-wider leading-none drop-shadow-sm text-[22px] sm:text-[28px]" style="color: ${scoreColor}; -webkit-text-stroke: 2.5px #5c4c8b; paint-order: stroke fill;">${displayScore}</span>
+                            <span class="font-black tracking-wider leading-none drop-shadow-sm" style="color: ${scoreColor}; -webkit-text-stroke: 2.5px #5c4c8b; paint-order: stroke fill; font-size: ${window.lsBarScoreFont || 22}px;">${displayScore}</span>
                         </div>
-                        
+
                     </div>
                 </div>
                 `;
@@ -12166,10 +12376,10 @@ els.playerList.addEventListener('input', e => {
             // （1V1 擂台、场次记录、布局、轮盘、成就、卡片底色、模块显隐等）
             // 【全量备份】程序内所有独立存放的信息：样式/视图设置 + 运行中状态 + 图片库 + 主题
             const SETTING_KEYS = ['ovoSettings', 'ovoViewMode', 'ssViewMode', 'ssCapsuleSettings',
-                'lsSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
+                'lsSettings', 'lsLogoSettings', 'rbSettings', 'rtCapsuleSettings', 'rsWheelSettings',
                 'achSettings', 'customCardColor', 'unoHiddenModules', 'unoViewConfigs', 'activeAudienceView',
                 'unoV2State', 'unoTimerRemain', 'unoTrElapsedSeconds', 'unoIsTimerRunning', 'unoTrIsRunning',
-                'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols'];
+                'earnSettings', 'earnViewMode', 'imgLibCollapsed', 'cipCat', 'cipCols', 'displayModeSettings', 'detailModuleHidden'];
             const appSettings = {};
             SETTING_KEYS.forEach(k => {
                 try {
@@ -12578,56 +12788,216 @@ window.resetAchSettings = function() {
 })();
 
 // ========== 【最新战况样式设置】 ==========
-window.toggleLsSettings = function() {
+// 全部参数默认值（绿框=单局卡片 / 红框=累计总榜）
+window.LS_DEFAULTS = {
+    lsCardW: 58, lsCardWSm: 90, lsCardGap: 8, lsCardR: 16,
+    lsNameH: 28, lsNameFont: 16, lsScoreFont: 14, lsTimeFont: 15,
+    lsRowGap: 12, lsBarH: 22, lsBarNameFont: 20, lsBarScoreFont: 22,
+    lsAvatarSize: 32, lsAvatarOffsetX: 0, lsAvatarOffsetY: 0,
+    lsShowCards: 1, lsShowBars: 1,
+    // 【新增】头部胶囊区参数：整体大小(%) / 第二排每行胶囊个数 / 标题胶囊与顶部间距 / 玩家条与顶部间距
+    lsHeadScale: 100, lsHeadPerRow: 4, lsHeadTopGap: 0, lsBarTopGap: 0,
+    // 【新增】标题各胶囊显隐开关（点亮显示 / 点灭隐藏）
+    lsShowTime: 1, lsShowRound: 1, lsShowDate: 1, lsShowRange: 1, lsShowTotal: 1
+};
+Object.keys(window.LS_DEFAULTS).forEach(function (k) {
+    if (window[k] === undefined) window[k] = window.LS_DEFAULTS[k];
+});
+
+// 卡片宽度需要区分手机/电脑两档 + 头部胶囊区参数 → 动态样式表注入
+window.applyLsDynamicCss = function () {
+    try {
+        let st = document.getElementById('lsDynamicStyle');
+        if (!st) { st = document.createElement('style'); st.id = 'lsDynamicStyle'; document.head.appendChild(st); }
+        // 【新增】头部胶囊区：整体大小(zoom缩放) / 第二排每行个数(grid) / 标题胶囊与顶部间距 / 玩家条与顶部间距
+        const headScale = Math.max(50, Math.min(200, parseInt(window.lsHeadScale) || 100));
+        const perRow = Math.max(1, Math.min(4, parseInt(window.lsHeadPerRow) || 4));
+        const headGap = Math.max(0, parseInt(window.lsHeadTopGap) || 0);
+        const barGap = Math.max(0, parseInt(window.lsBarTopGap) || 0);
+        st.textContent = '#statusPlayersContainer .ls-card{width:' + (window.lsCardW || 58) + 'px}'
+            + '@media (min-width:640px){#statusPlayersContainer .ls-card{width:' + (window.lsCardWSm || 90) + 'px}}'
+            + '#lsHeadWrap{zoom:' + (headScale / 100) + ';margin-top:' + headGap + 'px !important;}'
+            + '#lsHeadRow2{grid-template-columns:repeat(' + perRow + ',minmax(0,1fr)) !important;}'
+            + '#barRanking{margin-top:' + barGap + 'px !important;}';
+    } catch (e) {}
+};
+
+window.saveLsSettings = function () {
+    try {
+        const out = {};
+        Object.keys(window.LS_DEFAULTS).forEach(function (k) { out[k] = window[k]; });
+        localStorage.setItem('lsSettings', JSON.stringify(out));
+    } catch (e) {}
+};
+
+window.toggleLsSettings = function () {
     const panel = document.getElementById('lsSettingsPanel');
     if (!panel) return;
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
-        const inputs = { lsAvatarSize: 'lsAvatarSizeInput', lsRowGap: 'lsRowGapInput' };
-        for (const key in inputs) {
-            const input = document.getElementById(inputs[key]);
-            const valEl = document.getElementById(key + 'Val');
-            if (input) input.value = window[key] || 0;
-            if (valEl) valEl.textContent = window[key] || 0;
-        }
+        window.syncLsInputs();
     }
 };
 
-window.updateLsSetting = function(key, value) {
+// 把所有滑块/开关按钮刷成当前值
+window.syncLsInputs = function () {
+    Object.keys(window.LS_DEFAULTS).forEach(function (key) {
+        const input = document.getElementById(key + 'Input');
+        const valEl = document.getElementById(key + 'Val');
+        if (input) input.value = window[key];
+        if (valEl) valEl.textContent = window[key];
+    });
+    window.syncLsToggleBtns();
+    window.syncLsHeadCapBtns();
+};
+
+// 两个模块显示开关按钮的点亮/点灭视觉
+window.syncLsToggleBtns = function () {
+    [['lsShowCardsBtn', 'lsShowCards'], ['lsShowBarsBtn', 'lsShowBars']].forEach(function (pair) {
+        const btn = document.getElementById(pair[0]);
+        if (!btn) return;
+        const on = !!window[pair[1]];
+        btn.style.background = on ? '#4ADE80' : '#94A3B8';
+        btn.style.boxShadow = on ? '0 2px 0 #15803D' : '0 2px 0 #5E4B8B';
+        btn.textContent = pair[1] === 'lsShowCards' ? (on ? '单局卡片 · 开' : '单局卡片 · 关') : (on ? '累计总榜 · 开' : '累计总榜 · 关');
+    });
+};
+
+// 标题五个胶囊的显隐开关按钮视觉同步
+window.syncLsHeadCapBtns = function () {
+    [['lsShowTimeBtn', 'lsShowTime'], ['lsShowRoundBtn', 'lsShowRound'], ['lsShowDateBtn', 'lsShowDate'], ['lsShowRangeBtn', 'lsShowRange'], ['lsShowTotalBtn', 'lsShowTotal']].forEach(function (pair) {
+        const btn = document.getElementById(pair[0]);
+        if (!btn) return;
+        const on = !!window[pair[1]];
+        btn.style.background = on ? '#4ADE80' : '#94A3B8';
+        btn.style.boxShadow = on ? '0 2px 0 #15803D' : '0 2px 0 #5E4B8B';
+    });
+};
+
+// 【标题胶囊显隐】点亮显示 / 点灭隐藏（单独控制每个胶囊）
+window.toggleLsHeadCap = function (key) {
+    window[key] = window[key] ? 0 : 1;
+    window.saveLsSettings();
+    if (typeof renderBarRanking === 'function') renderBarRanking();
+    window.syncLsHeadCapBtns();
+    if (window.notifySettingsChanged) window.notifySettingsChanged();
+};
+
+// 【顶部LOGO专属区】展开 / 收起（独立折叠，与头部胶囊区互不干扰）
+window.toggleLsLogoArea = function () {
+    const box = document.getElementById('lsLogoPanelBox');
+    const state = document.getElementById('lsLogoAreaState');
+    if (!box) return;
+    const hidden = box.classList.toggle('hidden');
+    if (!hidden) { try { if (window.__rebuildLsLogoPanel) window.__rebuildLsLogoPanel(); } catch (e) {} }
+    if (state) state.textContent = hidden ? '点击展开 ▾' : '点击收起 ▴';
+};
+
+// 【模块显示开关】点亮显示 / 点灭隐藏
+window.toggleLsModule = function (key) {
+    window[key] = window[key] ? 0 : 1;
+    window.saveLsSettings();
+    window.applyLsModuleVisibility();
+    window.syncLsToggleBtns();
+    if (window.notifySettingsChanged) window.notifySettingsChanged();
+};
+
+// 应用两个模块的显隐（在 switchMobileTab 唤醒模块之后调用才能压得住 important）
+window.applyLsModuleVisibility = function () {
+    try {
+        const sec1 = document.getElementById('latestStatusSection');
+        const sec2 = document.getElementById('barSection');
+        if (sec1) sec1.style.setProperty('display', window.lsShowCards ? 'block' : 'none', 'important');
+        if (sec2) sec2.style.setProperty('display', window.lsShowBars ? 'block' : 'none', 'important');
+    } catch (e) {}
+};
+
+window.updateLsSetting = function (key, value) {
     window[key] = parseInt(value);
     const valEl = document.getElementById(key + 'Val');
     if (valEl) valEl.textContent = value;
-    try {
-        const saved = JSON.parse(localStorage.getItem('lsSettings') || '{}');
-        saved[key] = parseInt(value);
-        localStorage.setItem('lsSettings', JSON.stringify(saved));
-    } catch(e) {}
-    // 重新渲染排行榜
+    window.saveLsSettings();
+    window.applyLsDynamicCss();
+    // 绿框参数 → 重画单局卡片；红框参数 → 重画累计总榜（两个都刷，代价极低）
+    if (typeof window.renderLatestStatus === 'function') window.renderLatestStatus();
+    if (typeof renderBarRanking === 'function') renderBarRanking();
+    if (window.notifySettingsChanged) window.notifySettingsChanged();
+};
+
+window.resetLsSettings = function () {
+    Object.keys(window.LS_DEFAULTS).forEach(function (k) { window[k] = window.LS_DEFAULTS[k]; });
+    try { localStorage.removeItem('lsSettings'); } catch (e) {}
+    window.saveLsSettings();
+    window.syncLsInputs();
+    window.applyLsDynamicCss();
+    window.applyLsModuleVisibility();
+    if (typeof window.renderLatestStatus === 'function') window.renderLatestStatus();
     if (typeof renderBarRanking === 'function') renderBarRanking();
 };
 
-window.resetLsSettings = function() {
-    window.lsAvatarSize = 32;
-    window.lsRowGap = 12;
-    try { localStorage.removeItem('lsSettings'); } catch(e) {}
-    const defaults = {lsAvatarSize:32, lsRowGap:12};
-    for (const key in defaults) {
-        const input = document.getElementById(key + 'Input');
-        const valEl = document.getElementById(key + 'Val');
-        if (input) input.value = defaults[key];
-        if (valEl) valEl.textContent = defaults[key];
-    }
-    if (typeof renderBarRanking === 'function') renderBarRanking();
-};
-
-// 从localStorage加载最新战况设置
+// 从localStorage加载最新战况设置（只覆盖已保存的键，其余吃默认值）
 (function() {
     try {
         const s = JSON.parse(localStorage.getItem('lsSettings') || '{}');
-        if (s.lsAvatarSize !== undefined) window.lsAvatarSize = s.lsAvatarSize;
-        if (s.lsRowGap !== undefined) window.lsRowGap = s.lsRowGap;
+        Object.keys(window.LS_DEFAULTS).forEach(function (k) {
+            if (s[k] !== undefined) window[k] = s[k];
+        });
     } catch(e) {}
+    window.applyLsDynamicCss();
 })();
+
+// ========== 【最新战况·顶部LOGO设置】 ==========
+// 逻辑与 1V1/场次记录/收益榜 的标题LOGO完全一致：走通用 __logoPanelHtml / uploadModuleLogo / loadModuleLogoFromUrl 引擎
+window.lsLogoSettings = window.lsLogoSettings || { logoData: '', logoShow: 1, logoW: 120, logoH: 0, logoAlign: 'center', logoX: 0, logoY: 0, logoTop: 0, logoOpacity: 100, logoRotate: 0, logoShadow: 0, logoOutline: 0 };
+(function() {
+    try {
+        const s = JSON.parse(localStorage.getItem('lsLogoSettings') || '{}');
+        Object.keys(window.lsLogoSettings).forEach(function (k) {
+            if (s[k] !== undefined) window.lsLogoSettings[k] = s[k];
+        });
+    } catch (e) {}
+    // 启动即渲染顶部LOGO（此处脚本位于 barSection 标记之后，元素已就绪）
+    try { window.renderModuleLogo('ls'); } catch (e) {}
+})();
+
+// 最新战况设置面板里的「顶部LOGO」区（预览 + 上传/图库/URL + 大小/位置滑块）
+window.__rebuildLsLogoPanel = function () {
+    const box = document.getElementById('lsLogoPanelBox');
+    if (!box) return;
+    const S = window.lsLogoSettings || {};
+    // 通用区：预览 + 本地上传/图库/清除/显示开关/对齐/投影/URL载入
+    let html = window.__logoPanelHtml('ls', S, '顶部LOGO');
+    const slider = function (key, label, min, max, unit) {
+        const v = (S[key] === undefined) ? 0 : S[key];
+        return '<div class="flex flex-col gap-1">' +
+            '<label class="text-[10px] font-bold text-[#5E4B8B]">' + label + ': <span id="lsLogo_' + key + 'Val">' + v + '</span>' + (unit || 'px') + '</label>' +
+            '<input type="range" min="' + min + '" max="' + max + '" value="' + v + '" class="w-full accent-[#6ca5eb]" oninput="window.updateLsLogoSetting(\'' + key + '\', this.value)">' +
+        '</div>';
+    };
+    // 详尽参数：大小 / 高度 / 位置 / 偏移 / 透明度 / 旋转 / 描边
+    html += '<div class="grid grid-cols-2 gap-2 mt-1">' +
+        slider('logoW', 'LOGO宽度', 30, 400, 'px') +
+        slider('logoH', '高度(0=自动)', 0, 400, 'px') +
+        slider('logoTop', '距顶部', 0, 200, 'px') +
+        slider('logoX', '水平偏移', -200, 200, 'px') +
+        slider('logoY', '垂直偏移', -200, 200, 'px') +
+        slider('logoOpacity', '不透明度', 0, 100, '%') +
+        slider('logoRotate', '旋转角度', 0, 360, '°') +
+        slider('logoOutline', '描边粗细', 0, 10, 'px') +
+    '</div>';
+    box.innerHTML = html;
+};
+
+// 顶部LOGO滑块更新（不重建面板，避免拖动中断）
+window.updateLsLogoSetting = function (key, value) {
+    if (!window.lsLogoSettings) return;
+    window.lsLogoSettings[key] = parseInt(value);
+    const valEl = document.getElementById('lsLogo_' + key + 'Val');
+    if (valEl) valEl.textContent = value;
+    try { localStorage.setItem('lsLogoSettings', JSON.stringify(window.lsLogoSettings)); } catch (e) {}
+    try { window.renderModuleLogo('ls'); } catch (e) {}
+    if (window.notifySettingsChanged) window.notifySettingsChanged();
+};
 
 // ========== 【排行榜单样式设置】 ==========
 window.toggleRbSettings = function() {
@@ -13349,12 +13719,13 @@ function bindV2Events() {
 
         redoStack.length = 0; 
         resetV2State(); 
-gameData.currentSessionIndex = -1; // 强制回到全局视角
-customRange = null; // 【新增】清除自定义区间
+        // 【修复】结算后不再强制跳回「全部局数 / 全部场次」，保留用户自己选择的轮次和区间
+        // （原先这里把 currentSessionIndex 置 -1、customRange 置 null，导致每次结算都弹回 ALL）
         updateViewRounds();
         recalculateStats();
         updateAllUI();
         saveData();
+        if (window.__onSettlementDone) window.__onSettlementDone();
     };
 
            // V2 撤销上一局按钮
@@ -13432,7 +13803,7 @@ const mobileTabs = {
 'tab5': { name: '详细数据', color: '#93C5FD', modules:['timeHistorySection', 'scoreFlowSection', 'pieChartSection', 'methodStatSection', 'methodDetailSection', 'chartSection', 'radarSection', 'oneVsOneSection', 'sessionSection', 'earningsSection', 'tableSection'] },
         'tab6': { name: '随机抽选', color: '#7dd3fc', modules:['randomSelectorSection'] },
         'tab7': { name: '实时结算', color: '#d8b4e2', modules:['playerSection', 'timeRecordSection', 'timerSection', 'penaltySection', 'penaltyStatsSection'] },
-        'tab8': { name: '后台管理', color: '#F472B6', modules:['cloudShareSection', 'methodManagerSection', 'dataIOSection', 'imageLibrarySection'] },
+        'tab8': { name: '后台管理', color: '#F472B6', modules:['cloudShareSection', 'methodManagerSection', 'dataIOSection', 'imageLibrarySection', 'displayModeSection', 'detailModulesSection'] },
         'tab9': { name: '动态数据', color: '#6ee7b7', modules:['dynamicDataSection'] }, // <--- 全新：动态数据
         'tab10': { name: '卡牌信息', color: '#E0E7FF', modules:['cardInfoSection'] } // 原来的卡牌顺延
     };
@@ -13472,6 +13843,17 @@ const mobileTabs = {
                 el.style.order = index; 
             }
         });
+
+        // ★ 【新增：详细数据子模块显隐】仅作用于 tab5，不影响其它页
+        if (tabId === 'tab5') {
+            try {
+                const hidden = JSON.parse(localStorage.getItem('detailModuleHidden') || '[]');
+                hidden.forEach(function (hid) {
+                    const hel = document.getElementById(hid);
+                    if (hel) hel.style.setProperty('display', 'none', 'important');
+                });
+            } catch (e) {}
+        }
 
         // 2.5 【图片库】切到「后台管理」时刷新网格，并做一次兜底校验（保证一张不丢）
         if (tabId === 'tab8') {
@@ -13514,7 +13896,7 @@ const mobileTabs = {
 // 【核心修改】：现在 tab1(战况)、tab2(排行)、tab3(奖杯)、tab4(成就)、tab5(详细) 统统都要显示顶部局次控制台！
             if (tabId === 'tab1' || tabId === 'tab2' || tabId === 'tab3' || tabId === 'tab4' || tabId === 'tab5') {
                 stickyHeader.classList.remove('hidden');
-                stickyHeader.style.display = 'block';
+                stickyHeader.style.display = 'block'; stickyHeader.style.order = '-1';
             } else {
                 stickyHeader.classList.add('hidden');
                 stickyHeader.style.display = 'none';
@@ -13588,6 +13970,39 @@ const quickEditCardBtn = document.getElementById('quickEditCardBtn');
                 quickPlayerMgrBtn.classList.add('hidden');
                 quickPlayerMgrBtn.classList.remove('flex');
             }
+        }
+
+// 【新增】：最新战况样式设置按钮 —— 仅在最新战况 (tab1) 页面左上角显示
+        const lsSettingsWrap = document.getElementById('lsSettingsWrap');
+        if (lsSettingsWrap) {
+            if (tabId === 'tab1') {
+                lsSettingsWrap.classList.remove('hidden');
+            } else {
+                lsSettingsWrap.classList.add('hidden');
+                const lsp = document.getElementById('lsSettingsPanel');
+                if (lsp) lsp.classList.add('hidden'); // 离开页面顺手收起面板
+            }
+        }
+        // 应用「单局卡片 / 累计总榜」两个模块的点亮/点灭显隐 (须在 switchMobileTab 唤醒模块之后执行)
+        if (tabId === 'tab1' && typeof window.applyLsModuleVisibility === 'function') window.applyLsModuleVisibility();
+
+// 【新增】：左上角云端同步按钮 + 右上角设置齿轮 —— 仅在「后台管理」(tab8) 页面显示
+        window.__currentMobileTab = tabId; // 供 initCloudUI 等初始化逻辑查询当前页面
+        const __isAud = (typeof isAudienceMode !== 'undefined' && isAudienceMode);
+        const __quickHostUpload = document.getElementById('quickHostUploadBtn');
+        const __quickAudFetch = document.getElementById('quickAudienceFetchBtn');
+        const __bgSwitcher = document.getElementById('bgSwitcherBtn');
+        if (__quickHostUpload) {
+            if (tabId === 'tab8' && !__isAud) { __quickHostUpload.classList.remove('hidden'); __quickHostUpload.classList.add('flex'); }
+            else { __quickHostUpload.classList.add('hidden'); __quickHostUpload.classList.remove('flex'); }
+        }
+        if (__quickAudFetch) {
+            if (tabId === 'tab8' && __isAud) { __quickAudFetch.classList.remove('hidden'); __quickAudFetch.classList.add('flex'); }
+            else { __quickAudFetch.classList.add('hidden'); __quickAudFetch.classList.remove('flex'); }
+        }
+        if (__bgSwitcher) {
+            if (tabId === 'tab8') { __bgSwitcher.classList.remove('hidden'); __bgSwitcher.classList.add('flex'); }
+            else { __bgSwitcher.classList.add('hidden'); __bgSwitcher.classList.remove('flex'); }
         }
 
         // =======================================================
@@ -14849,7 +15264,7 @@ window.switchMobileTab = function(tabId) {
         if (tabId === 'tab9') {
             ctrlBar.classList.remove('hidden');
             stickyHeader.classList.remove('hidden');
-            stickyHeader.style.display = 'block';
+            stickyHeader.style.display = 'block'; stickyHeader.style.order = '-1';
             if(typeof window.initDDEngine === 'function') window.initDDEngine();
         } else {
             ctrlBar.classList.add('hidden');
@@ -17971,12 +18386,13 @@ const calcElem = document.getElementById('v2CalculateBtn');
                         calcElem.classList.add('opacity-50', 'cursor-not-allowed');
 
                         // 全局数据刷新
-                        gameData.currentSessionIndex = -1; 
-                        customRange = null; // 【新增】清除自定义区间
+                        // 【修复】结算后不再强制跳回「全部局数 / 全部场次」，保留用户自己选择的轮次和区间
+                        // （原先这里把 currentSessionIndex 置 -1、customRange 置 null，导致每次结算都弹回 ALL）
                         if(typeof updateViewRounds === 'function') updateViewRounds(); 
                         if(typeof recalculateStats === 'function') recalculateStats(); 
                         if(typeof updateAllUI === 'function') updateAllUI(); 
                         if(typeof saveData === 'function') saveData();
+                        if (window.__onSettlementDone) window.__onSettlementDone();
                         
                         if(typeof renderV2ScoreArea === 'function') renderV2ScoreArea();
                     };
@@ -18111,7 +18527,8 @@ window.renderLatestStatus = function() {
             const roundTextBtn = document.getElementById('statusCurrentRoundText');
             if(!container || !roundTextBtn) return;
 
-            container.className = "flex gap-[8px] sm:gap-3 items-stretch w-max mx-auto px-1";
+            container.className = "flex items-stretch w-max mx-auto px-1";
+            container.style.gap = (window.lsCardGap || 8) + 'px'; // 【参数化】卡片间距
 
             const active = gameData.players.filter(p => p.isActive);
             if(gameData.rounds.length === 0) {
@@ -18277,7 +18694,7 @@ window.renderLatestStatus = function() {
                   ======================================================== 
                 -->
                 <div class="w-full rounded-full bg-white border-[2px] border-[#5E4B8B] flex items-center justify-center py-[2px] sm:py-[3px] shadow-[0_3px_0_#5E4B8B] sm:shadow-[0_4px_0_#5E4B8B]">
-                    <span class="font-leslie font-bold text-[5px] sm:text-[15px] tracking-widest leading-none translate-y-[1px]" style="color: ${timeColor};">${timeStrDisplay}</span>
+                    <span class="font-leslie font-bold tracking-widest leading-none translate-y-[1px]" style="color: ${timeColor}; font-size: ${window.lsTimeFont || 15}px;">${timeStrDisplay}</span>
                 </div>`;
                 // ==========================================
 
@@ -18286,14 +18703,14 @@ window.renderLatestStatus = function() {
 //玩家名字颜色
 //分数显示
                 return `
-                <div class="w-[58px] sm:w-[90px] flex flex-col p-1.5 rounded-[16px] border-[3px] border-[#5E4B8B] shrink-0 gap-[7px] shadow-[0_4px_0_#5E4B8B]" style="background-color: ${outerBg};">
-                  
-                    <div class="w-full h-[28px] sm:h-[32px] rounded-full flex flex-row items-center border-[2px] border-[#5E4B8B] px-[3px] shadow-[0_4px_0_#5E4B8B]" style="background-color: ${p.color};">
-                        <span class="flex-1 text-center font-black text-[16px]  text-stroke sm:text-[14px] tracking-widest leading-none block" style="color: white; ">${getShort(p.name)}</span>
+                <div class="ls-card flex flex-col p-1.5 border-[3px] border-[#5E4B8B] shrink-0 gap-[7px] shadow-[0_4px_0_#5E4B8B]" style="background-color: ${outerBg}; border-radius: ${window.lsCardR || 16}px;">
+
+                    <div class="w-full rounded-full flex flex-row items-center border-[2px] border-[#5E4B8B] px-[3px] shadow-[0_4px_0_#5E4B8B]" style="background-color: ${p.color}; height: ${window.lsNameH || 28}px;">
+                        <span class="flex-1 text-center font-black text-stroke tracking-widest leading-none block" style="color: white; font-size: ${window.lsNameFont || 16}px;">${getShort(p.name)}</span>
                     </div>
 
                     <div class="w-full rounded-full bg-white border-[2px] border-[#5E4B8B] flex items-center justify-center py-[4px] shadow-[0_4px_0_#5E4B8B]">
-                        <span class="font-black text-[14px] sm:text-[16px] leading-none" style="color: ${scoreColor};">${scoreStr}</span>
+                        <span class="font-black leading-none" style="color: ${scoreColor}; font-size: ${window.lsScoreFont || 14}px;">${scoreStr}</span>
                     </div>
 
                     ${methodImgHtml}
@@ -18353,7 +18770,8 @@ if(typeof window.renderMethodDetailSection === 'function') window.renderMethodDe
 if(typeof window.renderTimeDataSection === 'function') window.renderTimeDataSection();
 if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
             if(originalUpdateAllUI) originalUpdateAllUI();
-            statusCurrentViewRound = -1; // 只要有新操作，自动跳回追踪最新一局
+            // 【修复】不再在每次 updateAllUI（含结算）时强制把视角切回最新一局，
+            // 保留用户自己选择的轮次/区间，避免结算后自动弹走。
             if(typeof window.renderLatestStatus === 'function') window.renderLatestStatus();
         };
 // 添加这3行：页面一加载就自动显示最新战况
@@ -18405,18 +18823,24 @@ if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
     
     window.currentDetailIndex = 1; // 默认走势图
 
-    // 2. 【全新加宽胶囊绘制引擎】
+    // 2. 【全新加宽胶囊绘制引擎】（已接入「详细数据模块管理」隐藏清单 detailModuleHidden）
     window.renderDetailNav = function() {
         const sliderArea = document.getElementById('detailNavSliderArea');
         if (!sliderArea) return;
-        
+
         const configs = window.detailModulesConfig;
+        let hidden = [];
+        try { hidden = JSON.parse(localStorage.getItem('detailModuleHidden') || '[]') || []; } catch (e) {}
+        // 仅渲染未被隐藏的子模块；用可见索引(vIdx)替代原 config 索引，保证点灭后彻底消失
+        const visible = configs.filter(m => hidden.indexOf(m.id) < 0);
+        window.__detailVisibleConfigs = visible;
+
         let html = '<div class="shrink-0 w-[50vw] sm:w-[50%] pointer-events-none"></div>';
-        
-        configs.forEach((mod, idx) => {
+
+        visible.forEach((mod, vIdx) => {
             html += `
             <!-- 增加了 onclick 事件，点击直接平滑切换 -->
-            <div class="snap-center shrink-0 flex justify-center nav-cap-btn px-1.5 sm:px-2 cursor-pointer" data-real-idx="${idx}" onclick="window.clickDetailNav(${idx})">
+            <div class="snap-center shrink-0 flex justify-center nav-cap-btn px-1.5 sm:px-2 cursor-pointer" data-real-idx="${vIdx}" onclick="window.clickDetailNav(${vIdx})">
                 <!-- 
                   ========================================================
                   【小白调节区：单个胶囊按钮参数】
@@ -18429,11 +18853,13 @@ if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
                 </div>
             </div>`;
         });
-        
-        html += '<div class="shrink-0 w-[50vw] sm:w-[50%] pointer-events-none"></div>'; 
+
+        html += '<div class="shrink-0 w-[50vw] sm:w-[50%] pointer-events-none"></div>';
         sliderArea.innerHTML = html;
 
         setTimeout(() => {
+            if (visible.length === 0) return;
+            if (window.currentDetailIndex >= visible.length || window.currentDetailIndex < 0) window.currentDetailIndex = 0;
             const targetChild = sliderArea.children[window.currentDetailIndex + 1];
             if (targetChild) {
                 const scrollPos = targetChild.offsetLeft - (sliderArea.clientWidth / 2) + (targetChild.clientWidth / 2);
@@ -18459,23 +18885,32 @@ if (typeof renderTrHistoryList === 'function') renderTrHistoryList();
     };
 
     window.updateDetailModulesDisplay = function() {
-        window.detailModulesConfig.forEach((mod, idx) => {
+        const configs = window.detailModulesConfig;
+        let hidden = [];
+        try { hidden = JSON.parse(localStorage.getItem('detailModuleHidden') || '[]') || []; } catch (e) {}
+        const visible = (window.__detailVisibleConfigs && window.__detailVisibleConfigs.length) ? window.__detailVisibleConfigs : configs.filter(m => hidden.indexOf(m.id) < 0);
+
+        // 先把全部子模块（含被隐藏的）统统收起
+        configs.forEach((mod) => {
             const el = document.getElementById(mod.id);
             if (el) {
-                if (idx === window.currentDetailIndex) {
-                    if (el.style.display === 'none') {
-                        el.style.setProperty('display', 'block', 'important');
-                        el.classList.remove('fade-in-module');
-                        void el.offsetWidth; 
-                        el.classList.add('fade-in-module');
-                    }
-                    if (mod.id === 'earningsSection') { try { window.renderEarnings(); } catch (e) {} }
-                } else {
-                    el.style.setProperty('display', 'none', 'important');
-                    el.classList.remove('fade-in-module');
-                }
+                el.style.setProperty('display', 'none', 'important');
+                el.classList.remove('fade-in-module');
             }
         });
+
+        if (visible.length === 0) return;
+        if (window.currentDetailIndex >= visible.length || window.currentDetailIndex < 0) window.currentDetailIndex = 0;
+        const cur = visible[window.currentDetailIndex];
+        if (cur) {
+            const el = document.getElementById(cur.id);
+            if (el) {
+                el.style.setProperty('display', 'block', 'important');
+                void el.offsetWidth;
+                el.classList.add('fade-in-module');
+                if (cur.id === 'earningsSection') { try { window.renderEarnings(); } catch (e) {} }
+            }
+        }
     };
 
     // 4. 【防误触滑动监听器】
@@ -19477,6 +19912,11 @@ window.broadcastV2State = function() {
             try {
                 const payload = JSON.parse(message.toString());
 
+                // 【成绩展示模式】客户端收到"游戏已结算"信号：若处于展示模式，跳转到最新战况页
+                if (payload.action === 'GAME_CALCULATED') {
+                    if (window.__displayMode && typeof window.__onSettlementDone === 'function') window.__onSettlementDone();
+                }
+
                 // 【情景 A：纯分数打字同步】
                 if (payload.action === 'UPDATE_SCORE' && myRole === 'host') {
                     const input = document.querySelector(`.v2-score-input[data-id="${payload.targetId}"]`);
@@ -19745,6 +20185,610 @@ if (payload.eliminatedStr) {
   };
 })();
 
+</script>
+
+<script>
+(function(){
+  'use strict';
+  // ============ 成绩展示模式 + 详细数据模块管理 ============
+  var DM_MODULES = [
+    {id:'latestStatusSection', name:'最新战况 · 单局卡片'},
+    {id:'barSection', name:'最新战况 · 累计总榜'},
+    {id:'championSectionWrapper', name:'冠军卡片'},
+    {id:'leaderboardSection', name:'排行榜'},
+    {id:'badgeSection', name:'成就勋章墙'},
+    {id:'achievementsSection', name:'全场成就'},
+    {id:'timeHistorySection', name:'时间记录'},
+    {id:'scoreFlowSection', name:'分数走向'},
+    {id:'pieChartSection', name:'得分占比'},
+    {id:'methodStatSection', name:'结算方式统计'},
+    {id:'methodDetailSection', name:'结算详情1'},
+    {id:'chartSection', name:'得分走势'},
+    {id:'radarSection', name:'个人能力析面'},
+    {id:'oneVsOneSection', name:'1V1擂台'},
+    {id:'sessionSection', name:'场次记录'},
+    {id:'earningsSection', name:'收益榜'},
+    {id:'tableSection', name:'局次得分详情'},
+    {id:'dynamicDataSection', name:'动态数据'},
+    {id:'randomSelectorSection', name:'随机选择器'}
+  ];
+  var DETAIL_MODULES = [
+    {id:'timeHistorySection', name:'时间记录'},
+    {id:'scoreFlowSection', name:'分数走向'},
+    {id:'pieChartSection', name:'得分占比'},
+    {id:'methodStatSection', name:'结算方式统计'},
+    {id:'methodDetailSection', name:'结算详情1'},
+    {id:'chartSection', name:'得分走势'},
+    {id:'radarSection', name:'个人能力析面'},
+    {id:'oneVsOneSection', name:'1V1擂台'},
+    {id:'sessionSection', name:'场次记录'},
+    {id:'earningsSection', name:'收益榜'},
+    {id:'tableSection', name:'局次得分详情'}
+  ];
+  var DM_DEFAULT = { enabled:{}, perPageTime:8, topDwell:3, bottomDwell:3, scrollSpeed:60, settleDwell:10, bgIndex:14, ultimate:false, cardBg:true, cardBgOpacity:0.3, cardBgSpeed:70 };
+  // 展示模式背景：直接复用 App 外部「身体背景」那同一套渐变（与后台管理的背景色板一致），再补几个纯色/深色
+  var DM_BG_LIST = [
+    {name:'云端白 (极简)', css:'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'},
+    {name:'独角兽 (梦幻)', css:'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)'},
+    {name:'薄荷苏打 (清新)', css:'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)'},
+    {name:'薰衣草 (淡雅)', css:'linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)'},
+    {name:'马尔代夫 (鲜亮)', css:'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)'},
+    {name:'深海夜 (深邃)', css:'linear-gradient(to top, #30cfd0 0%, #330867 100%)'},
+    {name:'婴儿蓝 (柔和)', css:'linear-gradient(to top, #accbee 0%, #e7f0fd 100%)'},
+    {name:'赛博紫 (酷炫)', css:'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'},
+    {name:'蜜桃气泡 (暖色)', css:'linear-gradient(to right, #ffecd2 0%, #fcb69f 100%)'},
+    {name:'雪山灰 (高级)', css:'linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%)'},
+    {name:'棉花糖 (可爱)', css:'radial-gradient(circle at 50% 50%, #ffe6fa, #e3fdf5)'},
+    {name:'旋转粉 (质感)', css:'conic-gradient(from 90deg at 50% 50%, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e)'},
+    {name:'极夜黑', css:'#000000'},
+    {name:'纯白', css:'#ffffff'},
+    {name:'深空紫 (展示专用)', css:'linear-gradient(160deg,#1f1147 0%,#3b1d6e 45%,#0e1633 100%)'}
+  ];
+  // 兼容旧设置（原先是 'dark' / 'light' / 'black' 三个字符串）
+  function dmBgIndex(){
+    var s=window.displayModeSettings;
+    var i=s.bgIndex;
+    if(typeof i!=='number'||i<0||i>=DM_BG_LIST.length){
+      var legacy={'dark':14,'light':0,'black':12};
+      i=(legacy[s.bg]!==undefined)?legacy[s.bg]:14;
+    }
+    return i;
+  }
+  function dmBgCss(){ return DM_BG_LIST[dmBgIndex()].css; }
+  // 背景舞台（固定最底层）：渐变层 + 卡牌飞行动画层；mainContainer 置透明以便透出
+  function dmEnsureBgStage(){
+    var st=document.getElementById('dmBgStage');
+    if(!st){
+      st=document.createElement('div'); st.id='dmBgStage';
+      st.style.cssText='position:fixed;inset:0;z-index:8998;overflow:hidden;pointer-events:none;';
+      var grad=document.createElement('div'); grad.id='dmGradLayer';
+      grad.style.cssText='position:absolute;inset:0;background-size:cover;background-position:center;';
+      var cb=document.createElement('div'); cb.id='dmCardBg';
+      cb.style.cssText='position:absolute;left:50%;top:50%;width:200vw;height:200vh;transform:translate(-50%,-50%) rotate(30deg);display:flex;align-items:flex-start;justify-content:center;pointer-events:none;';
+      st.appendChild(grad); st.appendChild(cb);
+      document.body.appendChild(st);
+    }
+    return st;
+  }
+  function dmApplyBg(){
+    var main=dmGetMain();
+    var st=dmEnsureBgStage(); if(st) st.style.display='block';
+    var grad=document.getElementById('dmGradLayer');
+    if(grad) grad.style.background=dmBgCss();
+    if(main) main.style.background='transparent';
+    dmBuildCardBg();
+  }
+  // 收集卡牌图片（卡牌系统 + 胜负自定义方式），与开机/大厅背景同源
+  function dmCollectCardUrls(){
+    var gd=null; try{ gd=window.gameData||gameData; }catch(e){ gd=window.gameData; }
+    var urls=[];
+    try{
+      if(gd && gd.cardSystem && gd.cardSystem.items) urls=urls.concat(gd.cardSystem.items.map(function(i){return i.url;}).filter(Boolean));
+      if(gd && gd.customMethods){
+        if(gd.customMethods.win && gd.customMethods.win.items) urls=urls.concat(gd.customMethods.win.items.map(function(i){return i.url;}).filter(Boolean));
+        if(gd.customMethods.lose && gd.customMethods.lose.items) urls=urls.concat(gd.customMethods.lose.items.map(function(i){return i.url;}).filter(Boolean));
+      }
+    }catch(e){}
+    return urls;
+  }
+  // 生成卡牌飞行背景（复用全局 lobbySlideUp / lobbySlideDown 关键帧，双屏拼接无缝循环）
+  function dmBuildCardBg(){
+    var layer=document.getElementById('dmCardBg'); if(!layer) return;
+    var s=window.displayModeSettings;
+    if(!s.cardBg){ layer.innerHTML=''; layer.style.opacity='0'; return; }
+    var urls=dmCollectCardUrls();
+    var def="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%' height='100%' fill='%23f3f4f6'/><text x='50%' y='50%' fill='%239ca3af' font-size='20' font-family='sans-serif' text-anchor='middle' dy='.3em'>UNO</text></svg>";
+    if(!urls.length) urls=[def,def,def];
+    var cols=12, per=14, speed=(s.cardBgSpeed||70);
+    var html='<div class="flex justify-center items-start w-full h-full">';
+    for(var i=0;i<cols;i++){
+      var up=(i%2===0);
+      var colUrls=[];
+      for(var j=0;j<per;j++) colUrls.push(urls[Math.floor(Math.random()*urls.length)]);
+      var half=colUrls.map(function(u){
+        return '<div class="py-2 sm:py-3 px-2 sm:px-3 w-full shrink-0"><div class="w-full aspect-[2/3] bg-[#111111] border-[3px] border-[#5E4B8B] rounded-[8px] shadow-lg overflow-hidden flex items-center justify-center"><img src="'+u+'" class="w-full h-full object-contain" crossorigin="anonymous"></div></div>';
+      }).join('');
+      html+='<div class="flex flex-col w-[90px] sm:w-[120px] shrink-0" style="animation:'+(up?'lobbySlideUp':'lobbySlideDown')+' '+speed+'s linear infinite;will-change:transform;">'+half+half+'</div>';
+    }
+    html+='</div>';
+    layer.innerHTML=html;
+    layer.style.opacity=String(s.cardBgOpacity!=null?s.cardBgOpacity:0.3);
+  }
+
+  function dmLoadSettings(){
+    try{ var s=JSON.parse(localStorage.getItem('displayModeSettings')||'null'); if(s&&typeof s==='object') return Object.assign({},DM_DEFAULT,s); }catch(e){}
+    return JSON.parse(JSON.stringify(DM_DEFAULT));
+  }
+  function dmSaveSettings(){ try{ localStorage.setItem('displayModeSettings', JSON.stringify(window.displayModeSettings)); }catch(e){} }
+  function dmLoadHidden(){ try{ return JSON.parse(localStorage.getItem('detailModuleHidden')||'[]'); }catch(e){ return []; } }
+  function dmSaveHidden(a){ try{ localStorage.setItem('detailModuleHidden', JSON.stringify(a)); }catch(e){} }
+
+  window.displayModeSettings = dmLoadSettings();
+  DM_MODULES.forEach(function(m){ if(window.displayModeSettings.enabled[m.id]===undefined) window.displayModeSettings.enabled[m.id]=true; });
+
+  var dmIndex=-1, dmAdvanceTimer=null, dmScrollRAF=null, dmEnforceInterval=null, dmCurrentId=null, dmPrevTab='tab3', dmExitBtn=null, dmProgressBar=null, dmTopLayer=null;
+  window.__displayMode=false;
+
+  function dmGetMain(){ return document.getElementById('mainContainer'); }
+  // ★ 核心修复：展示模式的“实际显示清单”必须同时满足两处管理设置（取交集）
+  //   1) 在「成绩展示模式」里被点亮（enabled[id] 为真）
+  //   2) 若该模块同时是「详细数据」子模块，则不能在「详细数据模块管理」里被点灭（不在 detailModuleHidden 中）
+  //   之前只按 enabled 判断，导致“详细数据里点灭的模块在展示模式照样显示”，看起来就像显示反了。
+  // 判断「点亮 / 点灭」开关是否处于点灭状态（0 / false / '0' 视为点灭；未定义视为点亮）
+  function dmIsOff(v){ return v===0||v===false||v==='0'; }
+  function dmEnabledList(){
+    var hidden=dmLoadHidden();
+    return DM_MODULES.filter(function(m){
+      if(!window.displayModeSettings.enabled[m.id]) return false;
+      if(hidden.indexOf(m.id)>=0) return false;
+      // ★★ 最新战况的两张卡片各有独立「点亮 / 点灭」开关（lsShowCards / lsShowBars），必须一并尊重。
+      //    之前展示模式用 display:block!important 强行点亮，完全没读这两个开关，
+      //    于是“点灭的卡片照样显示、点亮的反而被跳过”——这就是显示倒置的真正根因。
+      if(m.id==='latestStatusSection' && dmIsOff(window.lsShowCards)) return false;
+      if(m.id==='barSection' && dmIsOff(window.lsShowBars)) return false;
+      return true;
+    }).map(function(m){return m.id;});
+  }
+  // 注意：模块并不都是 <section>（例如 barSection「累计总榜」是 <div>），
+  // 所以必须遍历 mainContainer 的直接子元素，否则漏掉的 div 模块会在不该出现时一直露在外面。
+  function dmForEachSec(cb){
+    var main=dmGetMain(); if(!main) return;
+    var kids=main.children;
+    for(var i=0;i<kids.length;i++){ if(kids[i]) cb(kids[i]); }
+  }
+  // 各页面的数据刷新函数（用于进入每页 / 终极模式时确保内容是最新的）
+  var DM_RENDER = {
+    'latestStatusSection':'renderBarRanking',
+    'barSection':'renderBarRanking',
+    'sessionSection':'renderSessionSection',
+    'leaderboardSection':'renderLeaderboard',
+    'achievementsSection':'renderAchievements',
+    'pieChartSection':'renderPieCharts',
+    'chartSection':'renderChart',
+    'earningsSection':'renderEarnings',
+    'randomSelectorSection':'renderRandomSelector'
+  };
+
+  function dmRenderGrid(){
+    var grid=document.getElementById('dmModuleGrid'); if(!grid) return; grid.innerHTML='';
+    var hidden=dmLoadHidden();
+    DM_MODULES.forEach(function(m){
+      var on=!!window.displayModeSettings.enabled[m.id];
+      // 卡片级开关（最新战况：单局卡片 / 累计总榜）
+      var cardOff=(m.id==='latestStatusSection'&&dmIsOff(window.lsShowCards))||(m.id==='barSection'&&dmIsOff(window.lsShowBars));
+      var detailOff=hidden.indexOf(m.id)>=0;        // 已被「详细数据模块管理」点灭
+      var blocked=cardOff||detailOff;
+      var show=on&&!blocked;                        // 实际是否会在展示模式出现
+      var b=document.createElement('button'); b.type='button';
+      b.className='kawaii-btn !py-1 !px-3 text-[11px] sm:text-xs '+(show?'bg-[#6D82EE] text-white':(blocked?'bg-gray-100 text-gray-400 line-through':'bg-gray-200 text-gray-500'));
+      b.textContent=(show?'● ':(blocked?'✕ ':'○ '))+m.name;
+      b.title=cardOff?('在「最新战况」设置里被点灭了，展示模式与终极滚动都不会显示它')
+             :(detailOff?('已在「详细数据模块管理」里被点灭，展示模式与终极滚动都不会显示它')
+             :(on?'点击可点灭':'点击可点亮'));
+      b.onclick=function(){ window.displayModeSettings.enabled[m.id]=!window.displayModeSettings.enabled[m.id]; dmSaveSettings(); dmRenderGrid(); };
+      grid.appendChild(b);
+    });
+  }
+  function dmRenderSettings(){
+    var box=document.getElementById('dmSettings'); if(!box) return; var s=window.displayModeSettings;
+    box.innerHTML=''+
+      '<div class="text-[11px] font-black text-[#6D82EE] border-b-2 border-[#6D82EE]/30 pb-1">① 不滚动的短页（内容一屏放得下）</div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>短页展示时长</span><span id="dmPerPageVal">'+s.perPageTime+'s</span></div><input id="dmPerPage" type="range" min="2" max="60" step="1" value="'+s.perPageTime+'" class="w-full"></div>'+
+      '<div class="text-[10px] text-gray-500 -mt-1">只有这类页面用固定秒数。</div>'+
+      '<div class="text-[11px] font-black text-[#F472B6] border-b-2 border-[#F472B6]/30 pb-1 pt-1">② 需要滚动的长页 / 无限滚动</div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>顶部 / 开头停留</span><span id="dmTopVal">'+s.topDwell+'s</span></div><input id="dmTop" type="range" min="0" max="30" step="1" value="'+s.topDwell+'" class="w-full"></div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>滚动速度 (px/秒)</span><span id="dmSpeedVal">'+s.scrollSpeed+'</span></div><input id="dmSpeed" type="range" min="20" max="300" step="5" value="'+s.scrollSpeed+'" class="w-full"></div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>底部 / 结尾停留</span><span id="dmBotVal">'+s.bottomDwell+'s</span></div><input id="dmBot" type="range" min="0" max="30" step="1" value="'+s.bottomDwell+'" class="w-full"></div>'+
+      '<div class="text-[10px] text-gray-500 -mt-1">长页时长 = 顶部停留 ＋ 内容长度÷滚动速度 ＋ 底部停留。页面越长自动越久，不用固定值。</div>'+
+      '<div class="text-[11px] font-black text-[#5E4B8B] border-b-2 border-[#5E4B8B]/30 pb-1 pt-1">③ 其它</div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>结算后最新战况停留</span><span id="dmDwellVal">'+s.settleDwell+'s</span></div><input id="dmDwell" type="range" min="3" max="60" step="1" value="'+s.settleDwell+'" class="w-full"></div>'+
+      '<div><div class="text-[11px] text-[#5E4B8B] font-bold mb-1">底色（与外部卡片背景同一套）</div>'+
+        '<div id="dmBgGrid" class="grid grid-cols-6 gap-1.5"></div>'+
+        '<div id="dmBgName" class="text-[10px] text-gray-500 mt-1"></div></div>'+
+      '<div class="text-[11px] font-black text-[#7C3AED] border-b-2 border-[#7C3AED]/30 pb-1 pt-1">④ 卡牌飞行动画背景（开机画面同款）</div>'+
+      '<div class="flex items-center justify-between"><span class="text-[11px] text-[#5E4B8B] font-bold">启用卡牌平移飞过</span><button id="dmCardBgBtn" class="kawaii-btn !py-1 !px-3 text-[11px] '+(s.cardBg?'bg-[#7C3AED] text-white':'bg-gray-200 text-gray-500')+'">'+(s.cardBg?'已开启':'已关闭')+'</button></div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>卡牌透明度</span><span id="dmCardOpVal">'+Math.round((s.cardBgOpacity!=null?s.cardBgOpacity:0.3)*100)+'%</span></div><input id="dmCardOp" type="range" min="5" max="80" step="5" value="'+Math.round((s.cardBgOpacity!=null?s.cardBgOpacity:0.3)*100)+'" class="w-full"></div>'+
+      '<div><div class="flex justify-between text-[11px] text-[#5E4B8B] font-bold mb-1"><span>卡牌滚动速度（秒/圈，越小越快）</span><span id="dmCardSpVal">'+(s.cardBgSpeed||70)+'</span></div><input id="dmCardSp" type="range" min="20" max="160" step="5" value="'+(s.cardBgSpeed||70)+'" class="w-full"></div>';
+    var pp=document.getElementById('dmPerPage'); if(pp) pp.oninput=function(){ s.perPageTime=+pp.value; document.getElementById('dmPerPageVal').textContent=pp.value+'s'; dmSaveSettings(); };
+    var tp=document.getElementById('dmTop'); if(tp) tp.oninput=function(){ s.topDwell=+tp.value; document.getElementById('dmTopVal').textContent=tp.value+'s'; dmSaveSettings(); };
+    var bt=document.getElementById('dmBot'); if(bt) bt.oninput=function(){ s.bottomDwell=+bt.value; document.getElementById('dmBotVal').textContent=bt.value+'s'; dmSaveSettings(); };
+    var sp=document.getElementById('dmSpeed'); if(sp) sp.oninput=function(){ s.scrollSpeed=+sp.value; document.getElementById('dmSpeedVal').textContent=sp.value; dmSaveSettings(); };
+    var dw=document.getElementById('dmDwell'); if(dw) dw.oninput=function(){ s.settleDwell=+dw.value; document.getElementById('dmDwellVal').textContent=dw.value+'s'; dmSaveSettings(); };
+    var cbBtn=document.getElementById('dmCardBgBtn'); if(cbBtn) cbBtn.onclick=function(){ s.cardBg=!s.cardBg; dmSaveSettings(); dmRenderSettings(); if(window.__displayMode) dmApplyBg(); };
+    var cOp=document.getElementById('dmCardOp'); if(cOp) cOp.oninput=function(){ s.cardBgOpacity=(+cOp.value)/100; document.getElementById('dmCardOpVal').textContent=cOp.value+'%'; dmSaveSettings(); if(window.__displayMode) dmBuildCardBg(); };
+    var cSp=document.getElementById('dmCardSp'); if(cSp) cSp.oninput=function(){ s.cardBgSpeed=+cSp.value; document.getElementById('dmCardSpVal').textContent=cSp.value; dmSaveSettings(); if(window.__displayMode) dmBuildCardBg(); };
+    dmRenderBgGrid();
+  }
+  // 背景色板网格（点色块即可切换，选中项描紫边）
+  function dmRenderBgGrid(){
+    var grid=document.getElementById('dmBgGrid'); if(!grid) return;
+    var cur=dmBgIndex(); grid.innerHTML='';
+    DM_BG_LIST.forEach(function(bg,i){
+      var d=document.createElement('div');
+      d.className='w-full h-7 rounded-md cursor-pointer border-2 '+(i===cur?'border-[#6D82EE]':'border-transparent');
+      d.style.background=bg.css; d.setAttribute('title',bg.name);
+      d.onclick=function(){
+        window.displayModeSettings.bgIndex=i; dmSaveSettings(); dmRenderSettings();
+        if(window.__displayMode) dmApplyBg();   // 展示中改背景 → 立即生效
+      };
+      grid.appendChild(d);
+    });
+    var nm=document.getElementById('dmBgName');
+    if(nm) nm.textContent='当前：'+DM_BG_LIST[cur].name;
+  }
+  function dmRenderDetailGrid(){
+    var grid=document.getElementById('detailModuleGrid'); if(!grid) return; var hidden=dmLoadHidden(); grid.innerHTML='';
+    // 直接复用详情数据引擎的真实清单（detailModulesConfig），保证名称/数量与「详细数据」页完全一致（含结算详情2）
+    var list=(window.detailModulesConfig && window.detailModulesConfig.length) ? window.detailModulesConfig : DETAIL_MODULES;
+    list.forEach(function(m){
+      var on=hidden.indexOf(m.id)<0;
+      var b=document.createElement('button'); b.type='button';
+      b.className='kawaii-btn !py-1 !px-3 text-[11px] sm:text-xs '+(on?'bg-[#F472B6] text-white':'bg-gray-200 text-gray-500');
+      b.textContent=(on?'● ':'○ ')+m.name;
+      b.onclick=function(){
+        var h=dmLoadHidden();
+        if(h.indexOf(m.id)>=0) h=h.filter(function(x){return x!==m.id;}); else h.push(m.id);
+        dmSaveHidden(h); dmRenderDetailGrid();
+        // 同步刷新「成绩展示模式」的模块网格（被点灭的会标记为 ✕，展示模式也不会再显示它）
+        if(typeof dmRenderGrid==='function') dmRenderGrid();
+        // 若正在「详细数据」页，立即重绘底部胶囊导航，使点灭即时生效
+        var act=document.querySelector('.mobile-tab-btn.active-tab');
+        if(act&&act.getAttribute('data-tab')==='tab5'&&typeof window.renderDetailNav==='function') window.renderDetailNav();
+      };
+      grid.appendChild(b);
+    });
+  }
+
+  // ★ 后台管理两个新区块的「默认折叠」逻辑（复用图片库的折叠范式）
+  function dmRestoreCollapse(key, defCollapsed){
+    var body=document.getElementById(key+'Body'); var chev=document.getElementById(key+'_chev');
+    var collapsed=defCollapsed;
+    try{ var v=localStorage.getItem('dmCollapsed_'+key); if(v!==null) collapsed=(v==='1'); }catch(e){}
+    if(body){ body.classList.toggle('hidden', collapsed); body.classList.toggle('block', !collapsed); }
+    if(chev) chev.className = collapsed ? 'fa-solid fa-chevron-down text-[11px]' : 'fa-solid fa-chevron-up text-[11px]';
+  }
+  window.toggleDmCollapse=function(key){
+    var body=document.getElementById(key+'Body'); var chev=document.getElementById(key+'_chev');
+    if(!body) return;
+    var open=!body.classList.contains('hidden');
+    body.classList.toggle('hidden', open); body.classList.toggle('block', !open);
+    if(chev) chev.className = open ? 'fa-solid fa-chevron-down text-[11px]' : 'fa-solid fa-chevron-up text-[11px]';
+    try{ localStorage.setItem('dmCollapsed_'+key, open?'1':'0'); }catch(e){}
+  };
+
+  var dmTimers=[];
+  function dmClearTimers(){
+    if(dmAdvanceTimer){ clearTimeout(dmAdvanceTimer); dmAdvanceTimer=null; }
+    if(dmScrollRAF){ cancelAnimationFrame(dmScrollRAF); dmScrollRAF=null; }
+    for(var i=0;i<dmTimers.length;i++){ try{ clearTimeout(dmTimers[i]); }catch(e){} }
+    dmTimers=[];
+  }
+  function dmSpecificRender(id){
+    var fn=DM_RENDER[id];
+    if(fn&&typeof window[fn]==='function'){ try{ window[fn](); }catch(e){} }
+  }
+
+  // ==================== 终极无限滚动模式 ====================
+  // 把「点亮的模块」全部竖向拼成一条长龙，持续向下滚动，到底自动回到顶部循环。
+  var dmUltActive=false, dmUltRAF=null, dmUltLast=null, dmUltPauseUntil=0;
+  // 无限滚动的三段节奏：top(开头停留) → scroll(持续下滚) → bottom(结尾停留) → 回 top 循环
+  var dmUltPhase='top', dmUltPhaseUntil=0;
+  function dmUltEnforce(){
+    var main=dmGetMain(); if(!main) return;
+    var list=dmEnabledList();
+    // mainContainer 是 flex flex-col → 用 order 精确控制“长龙”的拼接顺序（按点亮的清单顺序）
+    var kids=main.children;
+    for(var i=0;i<kids.length;i++){
+      var el=kids[i]; if(!el||!el.style) continue;
+      var idx=list.indexOf(el.id);
+      if(idx>=0){
+        el.style.setProperty('display',(el.id==='dataIOSection'||el.id==='tableSection')?'flex':'block','important');
+        el.style.setProperty('order', String(idx), 'important');
+      } else {
+        el.style.setProperty('display','none','important');
+      }
+    }
+  }
+  // 进入展示模式前，快照每个子模块的原始行内 display / order（例如 detailDataStickyHeader 的 order:-1 必须保住）
+  function dmSnapshotInline(){
+    var main=dmGetMain(); if(!main) return;
+    var kids=main.children;
+    for(var i=0;i<kids.length;i++){
+      var el=kids[i]; if(!el||!el.dataset) continue;
+      if(el.dataset.dmOrigOrder===undefined) el.dataset.dmOrigOrder=el.style.order||'';
+      if(el.dataset.dmOrigDisplay===undefined) el.dataset.dmOrigDisplay=el.style.display||'';
+    }
+  }
+  // 退出展示模式时，把子模块的行内样式“还原成进来前的样子”，而不是一律清空
+  // （之前一律 removeProperty('order') 会把 detailDataStickyHeader 的 order:-1 抹掉，导致顶部局次栏错位、跟着页面跑）
+  function dmClearInline(){
+    var main=dmGetMain(); if(!main) return;
+    var kids=main.children;
+    for(var i=0;i<kids.length;i++){
+      var el=kids[i]; if(!el||!el.style) continue;
+      try{
+        if(el.dataset){
+          if(el.dataset.dmOrigOrder!==undefined){
+            if(el.dataset.dmOrigOrder==='') el.style.removeProperty('order');
+            else el.style.setProperty('order', el.dataset.dmOrigOrder);
+            delete el.dataset.dmOrigOrder;
+          }
+          if(el.dataset.dmOrigDisplay!==undefined){
+            if(el.dataset.dmOrigDisplay==='') el.style.removeProperty('display');
+            else el.style.setProperty('display', el.dataset.dmOrigDisplay);
+            delete el.dataset.dmOrigDisplay;
+          }
+        }
+      }catch(e){}
+    }
+  }
+  function dmUltStart(){
+    dmClearTimers();
+    dmUltActive=true; dmCurrentId=null;
+    if(typeof window.updateAllUI==='function'){ try{ window.updateAllUI(); }catch(e){} }
+    var list=dmEnabledList();
+    if(list.length===0) return;
+    list.forEach(function(id){ dmSpecificRender(id); });
+    dmUltEnforce();
+    // 终极长龙是可滚动的超长视图 → 顶对齐，绝不能用居中（否则顶部被裁）
+    var main=dmGetMain(); if(main){ main.scrollTop=0; main.style.setProperty('justify-content','flex-start','important'); }
+    dmUltLast=null; dmUltPauseUntil=0; dmUltPhase='top'; dmUltPhaseUntil=0;
+    dmUltRAF=requestAnimationFrame(dmUltStep);
+  }
+  function dmUltStop(){
+    dmUltActive=false;
+    if(dmUltRAF){ cancelAnimationFrame(dmUltRAF); dmUltRAF=null; }
+    dmUltLast=null; dmUltPauseUntil=0; dmUltPhase='top'; dmUltPhaseUntil=0;
+  }
+  function dmUltStep(ts){
+    if(!dmUltActive||!window.__displayMode){ dmUltRAF=null; return; }
+    var main=dmGetMain(); if(!main){ dmUltRAF=requestAnimationFrame(dmUltStep); return; }
+    if(dmUltLast===null) dmUltLast=ts;
+    var dt=(ts-dmUltLast)/1000; dmUltLast=ts;
+    if(dt>0.25) dt=0.25; // 切后台回来时防止瞬间巨大跳跃
+    // 结算跳「最新战况」时的暂停，优先级最高（暂停期间不动滚动条）
+    if(ts<dmUltPauseUntil){ dmUltRAF=requestAnimationFrame(dmUltStep); return; }
+    var s=window.displayModeSettings;
+    var topMs=(s.topDwell||0)*1000, botMs=(s.bottomDwell||0)*1000;
+    var maxScroll=Math.max(0,(main.scrollHeight||0)-main.clientHeight);
+    if(maxScroll<=0){
+      if(dmProgressBar) dmProgressBar.style.width='100%';
+      dmUltRAF=requestAnimationFrame(dmUltStep); return;
+    }
+    var now=performance.now();
+    if(dmUltPhase==='top'){               // ① 开头停留
+      if(dmUltPhaseUntil===0){ dmUltPhaseUntil=now+topMs; main.scrollTop=0; } // 刚进入开头：定位到最顶
+      if(now>=dmUltPhaseUntil){ dmUltPhase='scroll'; dmUltPhaseUntil=0; }
+    } else if(dmUltPhase==='bottom'){     // ③ 结尾停留 → 回开头循环
+      if(dmUltPhaseUntil===0){ dmUltPhaseUntil=now+botMs; main.scrollTop=maxScroll; }
+      if(now>=dmUltPhaseUntil){ dmUltPhase='top'; dmUltPhaseUntil=0; main.scrollTop=0; }
+    } else {                              // ② 持续向下滚动
+      main.scrollTop+=(s.scrollSpeed||60)*dt;
+      if(main.scrollTop>=maxScroll){ main.scrollTop=maxScroll; dmUltPhase='bottom'; dmUltPhaseUntil=0; }
+    }
+    if(dmProgressBar) dmProgressBar.style.width=((main.scrollTop/maxScroll)*100)+'%';
+    dmUltRAF=requestAnimationFrame(dmUltStep);
+  }
+  // 定位到长龙中的某个模块（平滑滚动）
+  function dmUltScrollToEl(el){
+    var main=dmGetMain(); if(!main||!el) return;
+    var mrect=main.getBoundingClientRect(); var erel=el.getBoundingClientRect();
+    var delta=erel.top-mrect.top;
+    var startTop=main.scrollTop, target=Math.max(0,startTop+delta);
+    var t0=null, dur=Math.min(1200,Math.max(280,Math.abs(delta)*0.8));
+    function anim(ts){
+      if(!dmUltActive||!window.__displayMode) return;
+      if(t0===null) t0=ts;
+      var p=Math.min(1,(ts-t0)/dur);
+      main.scrollTop=startTop+(target-startTop)*p;
+      if(p<1) requestAnimationFrame(anim);
+    }
+    requestAnimationFrame(anim);
+  }
+  function dmUltJumpToLatest(){
+    if(!dmUltActive) return;
+    var t=dmPickLatestCard(); if(!t) return;   // 两张卡片都被点灭 → 不跳转
+    var el=document.getElementById(t); if(!el) return;
+    dmSpecificRender(t);
+    dmUltScrollToEl(el);
+    // 停留结束后从「最新战况」当前位置继续往下滚，不要被拽回开头
+    dmUltPhase='scroll'; dmUltPhaseUntil=0;
+    dmUltPauseUntil=performance.now()+(window.displayModeSettings.settleDwell||10)*1000;
+  }
+  // 切换普通轮播 / 终极滚动（不重复做全屏初始化）
+  function dmSwitchMode(wantUlt){
+    dmClearTimers(); dmUltStop();
+    dmUltActive=!!wantUlt;
+    if(dmUltActive) dmUltStart(); else { dmIndex=-1; dmNext(); }
+  }
+
+  function dmEnforce(targetId){
+    if(!window.__displayMode) return;
+    if(dmUltActive){ dmUltEnforce(); return; }
+    if(!targetId) return;
+    dmForEachSec(function(el){
+      if(el.id===targetId) el.style.setProperty('display',(targetId==='dataIOSection'||targetId==='tableSection')?'flex':'block','important');
+      else el.style.setProperty('display','none','important');
+    });
+  }
+  function dmShowModule(id, overrideDwellMs){
+    dmClearTimers();
+    if(typeof window.updateAllUI==='function'){ try{ window.updateAllUI(); }catch(e){} }
+    dmCurrentId=id;
+    dmForEachSec(function(el){ el.style.setProperty('display','none','important'); });
+    var t=document.getElementById(id);
+    if(!t){ dmNext(); return; }
+    t.style.setProperty('display',(id==='dataIOSection'||id==='tableSection')?'flex':'block','important');
+    t.style.order='0';
+    dmSpecificRender(id);
+    var main=dmGetMain(); if(main) main.scrollTop=0;
+    if(dmProgressBar) dmProgressBar.style.width='0%';
+    var s=window.displayModeSettings;
+    var mainH=main?main.clientHeight:window.innerHeight;
+    var overflow=Math.max(0,(t.scrollHeight||0)-mainH);
+    var scrollDurMs=overflow>0?(overflow/(s.scrollSpeed||60))*1000:0;
+    if(overflow>0&&main){
+      // 内容超过一屏 → 需要滚动播放，从顶部顶对齐开始滚
+      main.style.setProperty('justify-content','flex-start','important');
+      // ★ 三段式：顶部停留 → 平滑滚到底 → 底部停留，然后才切下一页
+      var topMs=(s.topDwell||0)*1000;
+      var botMs=(s.bottomDwell||0)*1000;
+      // 结算跳转：保证这一页至少展示 settleDwell 秒
+      if(overrideDwellMs!=null) botMs=Math.max(botMs, Math.max(0, overrideDwellMs-(topMs+scrollDurMs)));
+      var pageDur=topMs+scrollDurMs+botMs;
+      dmTimers.push(setTimeout(function(){
+        if(dmCurrentId!==id||!window.__displayMode||dmUltActive) return;
+        var startTime=null;
+        function step(ts){
+          if(dmCurrentId!==id||!window.__displayMode||dmUltActive) return;
+          if(startTime===null) startTime=ts;
+          var p=scrollDurMs>0?Math.min(1,(ts-startTime)/scrollDurMs):1;
+          // 每帧重算真实可滚动距离 → 保证一定滚到真正的底部（修复“还没滚完就切走”）
+          var maxScroll=Math.max(0,(main.scrollHeight||0)-main.clientHeight);
+          main.scrollTop=maxScroll*p;
+          if(dmProgressBar) dmProgressBar.style.width=(((topMs+scrollDurMs*p)/(pageDur||1))*100)+'%';
+          if(p<1){ dmScrollRAF=requestAnimationFrame(step); }
+          else { dmScrollRAF=null; if(dmProgressBar) dmProgressBar.style.width='100%'; }
+        }
+        dmScrollRAF=requestAnimationFrame(step);
+      }, topMs));
+      dmAdvanceTimer=setTimeout(dmNext, pageDur+150);
+    } else {
+      if(dmProgressBar) dmProgressBar.style.width='100%';
+      // ★ 非滚动播放：内容不足一屏时，实时按视图高度让它始终处于页面纵向正中间
+      if(main){
+        main.style.setProperty('justify-content','center','important');
+        // 内容若仍比视口高（渲染后又被撑高），则回退为可滚动的顶对齐，避免顶部被裁掉
+        var h=t.scrollHeight||0, vh2=main.clientHeight||0;
+        if(h>vh2){
+          main.style.setProperty('justify-content','flex-start','important');
+          main.scrollTop=0;
+        }
+      }
+      var dur=(overrideDwellMs!=null)?overrideDwellMs:Math.max((s.perPageTime||8)*1000,500);
+      dmAdvanceTimer=setTimeout(dmNext, dur+150);
+    }
+  }
+  function dmNext(){
+    if(dmUltActive) return;
+    var list=dmEnabledList(); if(list.length===0) return;
+    dmIndex=(dmIndex+1)%list.length; dmShowModule(list[dmIndex]);
+  }
+  // 「最新战况」= 单局卡片(latestStatusSection) + 累计总榜(barSection) 两张卡片，
+  // 结算后要跳到其中「被点亮」的那一张；两张都点灭则返回 null（绝不强行显示被点灭的模块）
+  function dmPickLatestCard(){
+    if(!dmIsOff(window.lsShowCards)) return 'latestStatusSection';
+    if(!dmIsOff(window.lsShowBars)) return 'barSection';
+    return null;
+  }
+  function dmJumpToLatest(){
+    if(!window.__displayMode) return;
+    if(dmUltActive){ dmUltJumpToLatest(); return; }
+    var target=dmPickLatestCard();
+    // ★ 严格遵循用户设置：最新战况的卡片若被点灭，就不强行跳转过去
+    if(!target) return;
+    var list=dmEnabledList();
+    var idx=list.indexOf(target);
+    if(idx<0) return;
+    dmShowModule(target, (window.displayModeSettings.settleDwell||10)*1000);
+    dmIndex=idx;
+  }
+  window.__onSettlementDone=function(){ if(window.__displayMode) dmJumpToLatest(); };
+
+  function dmEnsureLayer(){
+    if(dmTopLayer) return;
+    dmTopLayer=document.createElement('div'); dmTopLayer.id='dmTopLayer';
+    dmTopLayer.style.cssText='position:fixed;top:0;left:0;right:0;height:4px;z-index:9100;background:transparent;pointer-events:none;';
+    dmProgressBar=document.createElement('div'); dmProgressBar.style.cssText='height:100%;width:0%;background:linear-gradient(90deg,#6D82EE,#F472B6);';
+    dmTopLayer.appendChild(dmProgressBar); document.body.appendChild(dmTopLayer);
+    dmExitBtn=document.createElement('button'); dmExitBtn.textContent='✕ 退出';
+    dmExitBtn.style.cssText='position:fixed;top:10px;right:10px;z-index:9100;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;';
+    dmExitBtn.onclick=function(){ window.exitDisplayMode(); }; document.body.appendChild(dmExitBtn);
+  }
+  window.enterDisplayMode=function(ult){
+    var wantUlt=!!ult;
+    // 已在展示模式：仅切换「普通轮播 / 终极滚动」，不重复做全屏初始化
+    if(window.__displayMode){ if(dmUltActive!==wantUlt){ dmSwitchMode(wantUlt); dmSyncUltBtn(); } return; }
+    var act=document.querySelector('.mobile-tab-btn.active-tab'); dmPrevTab=act?act.getAttribute('data-tab'):'tab3';
+    dmSnapshotInline();   // 进展示模式前先记录各模块原始行内样式，退出时原样还原（保住顶部局次栏 order:-1）
+    window.__displayMode=true;
+    var tb=document.getElementById('topBar'); if(tb) tb.style.display='none';
+    var bnb=document.getElementById('bottomNavBar'); if(bnb) bnb.style.display='none';
+    ['detailDataStickyHeader','detailNavBottomBar','ddControlsBar'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
+    var main=dmGetMain();
+    if(main){ main.setAttribute('data-dm-prev-style', main.getAttribute('style')||'');
+      main.style.setProperty('position','fixed','important'); main.style.setProperty('inset','0','important');
+      main.style.setProperty('width','100%','important'); main.style.setProperty('height','100vh','important');
+      main.style.setProperty('overflow-y','auto','important'); main.style.setProperty('z-index','9000','important');
+      main.style.setProperty('padding','0','important');
+    }
+    dmApplyBg();
+    dmEnsureLayer(); if(dmTopLayer) dmTopLayer.style.display='block'; if(dmExitBtn) dmExitBtn.style.display='block';
+    try{ if(main&&main.requestFullscreen) main.requestFullscreen().catch(function(){}); }catch(e){}
+    dmUltActive=wantUlt;
+    if(dmUltActive) dmUltStart(); else { dmIndex=-1; dmNext(); }
+    dmEnforceInterval=setInterval(function(){ dmEnforce(dmCurrentId); }, 400);
+    dmSyncUltBtn();
+  };
+  window.exitDisplayMode=function(){
+    if(!window.__displayMode) return; window.__displayMode=false;
+    dmClearTimers(); dmUltStop();
+    if(dmEnforceInterval){ clearInterval(dmEnforceInterval); dmEnforceInterval=null; }
+    var main=dmGetMain(); if(main){ main.removeAttribute('style'); var prev=main.getAttribute('data-dm-prev-style'); if(prev) main.setAttribute('style',prev); }
+    dmClearInline();
+    var tb=document.getElementById('topBar'); if(tb) tb.style.display='';
+    var bnb=document.getElementById('bottomNavBar'); if(bnb) bnb.style.display='';
+    ['detailDataStickyHeader','detailNavBottomBar','ddControlsBar'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display=''; });
+    if(dmTopLayer) dmTopLayer.style.display='none'; if(dmExitBtn) dmExitBtn.style.display='none';
+    var stBg=document.getElementById('dmBgStage'); if(stBg) stBg.style.display='none';
+    try{ if(document.fullscreenElement) document.exitFullscreen().catch(function(){}); }catch(e){}
+    if(typeof window.switchMobileTab==='function') window.switchMobileTab(dmPrevTab||'tab3');
+    dmSyncUltBtn();
+  };
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape'&&window.__displayMode) window.exitDisplayMode(); });
+
+  // 终极按钮状态同步（关 → 灰底「开启」；开 → 粉底「关闭」）
+  function dmSyncUltBtn(){
+    var b=document.getElementById('dmUltBtn'); if(!b) return;
+    var on=window.__displayMode&&dmUltActive;
+    b.className='kawaii-btn !py-1.5 !px-4 text-xs sm:text-sm '+(on?'bg-[#F472B6] text-white shadow-sm':'bg-gray-200 text-[#5E4B8B] shadow-sm');
+    b.innerHTML=on?'<i class="fa-solid fa-stop mr-1"></i>关闭终极滚动':'<i class="fa-solid fa-infinity mr-1"></i>终极无限滚动';
+  }
+  window.dmSyncUltBtn=dmSyncUltBtn;
+  // 终极按钮：一键打开 / 关闭 终极无限滚动
+  window.dmToggleUltimate=function(){
+    var s=window.displayModeSettings;
+    if(window.__displayMode&&dmUltActive){ // 正在终极滚动 → 关闭
+      s.ultimate=false; dmSaveSettings(); window.exitDisplayMode(); return;
+    }
+    s.ultimate=true; dmSaveSettings();
+    window.enterDisplayMode(true);
+  };
+
+  window.initDisplayModeUI=function(){ dmRenderGrid(); dmRenderSettings(); dmRenderDetailGrid(); dmRestoreCollapse('displayMode', true); dmRestoreCollapse('detailModules', true); dmSyncUltBtn(); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', window.initDisplayModeUI);
+  else window.initDisplayModeUI();
+})();
 </script>
 </body>
 </html>
